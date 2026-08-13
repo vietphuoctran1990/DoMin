@@ -76,7 +76,7 @@ chỉ cần bấm “Thử lại”.
 
 Mở khoá sau khi bé hạ Sếp Bom cuối cùng. Câu hỏi sinh ra không bao giờ hết, khó dần
 theo từng chặng, bé có **3 trái tim** — đi được càng xa càng giỏi. Game ghi lại
-**kỷ lục** của bé và thưởng 1 ⭐ cho mỗi 5 chặng đi được. Đây là phần giữ bé quay lại
+**kỷ lục** của bé và thưởng 1 ⭐ cho mỗi 4 chặng đi được. Đây là phần giữ bé quay lại
 chơi sau khi đã đi hết hành trình.
 
 ## 👩‍🏫 Bé sai thì được chỉ, không bị bỏ mặc
@@ -85,8 +85,9 @@ chơi sau khi đã đi hết hành trình.
 - Sai **lần 2** ở cùng một câu: **cô giáo hiện ra chỉ cách làm** bằng hình minh hoạ
   (ví dụ 3 + 1 → 🍎🍎🍎 thêm 🍎 = 4 quả), đọc to lời giải thích, và bông hoa đúng
   nhấp nháy kèm ngón tay 👉 mời bé bước tới. Bé luôn tự tay chọn đáp án đúng.
-- Những câu bé từng sai được **ghi vào sổ và cho gặp lại** ở các chặng sau
-  (khoảng 1/3 số câu, đáp án xếp lại vị trí để bé phải nghĩ chứ không nhớ chỗ).
+- Những câu bé từng sai được **ghi vào sổ và cho gặp lại** ở các chặng sau. Tần suất
+  tăng dần theo số câu trong sổ (nhiều nhất 30%) và không lặp lại đúng câu vừa ôn,
+  đáp án cũng xếp lại vị trí để bé phải nghĩ chứ không nhớ chỗ.
   Làm đúng ngay lần đầu thì câu đó được xoá khỏi sổ — bé thấy dòng chữ *"THUỘC RỒI! 🎓"*.
 
 ## 🎒 Tủ đồ & 🏅 Album sticker
