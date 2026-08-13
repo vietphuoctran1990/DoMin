@@ -70,6 +70,15 @@
     <div class="hint-bubble" id="hintBubble" hidden>
       <span class="hint-ico">🔍</span><span id="hintText"></span>
     </div>
+
+    <!-- Bé sai 2 lần thì chỉ luôn cách làm -->
+    <div class="teach-bubble" id="teachBubble" hidden>
+      <span class="teach-ico">👩‍🏫</span>
+      <div class="teach-body">
+        <span id="teachText"></span>
+        <div class="teach-visual" id="teachVisual" hidden></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ SÂN CHƠI ============ -->
@@ -197,6 +206,7 @@
     <div class="map-foot">
       <button class="tool-btn" id="btnWardrobeMap">🎒 Tủ đồ</button>
       <button class="tool-btn" id="btnAlbumMap">🏅 Album</button>
+      <button class="tool-btn endless-btn" id="btnEndless" hidden>🌌 Vùng Đất Bí Ẩn</button>
     </div>
   </div>
 
@@ -252,8 +262,9 @@
   <div class="overlay overlay-win" id="loseScreen" hidden>
     <div class="win-card lose-card">
       <div class="win-flag">💣</div>
-      <h2>Sếp Bom mạnh quá!</h2>
+      <h2 id="loseTitle">Sếp Bom mạnh quá!</h2>
       <p class="win-line" id="loseMsg"></p>
+      <p class="win-line lose-stats" id="loseStats" hidden></p>
       <p class="win-line small-note">Bé không mất sao hay đồ đạc gì đâu nhé 💚</p>
       <div class="win-btns">
         <button class="big-btn" id="btnRetry">🔁 THỬ LẠI</button>

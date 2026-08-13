@@ -853,7 +853,7 @@ html, body {
 .boss-wrap {
   position: absolute; left: 50%; top: 3%;
   transform: translateX(-50%);
-  width: clamp(96px, min(30vw, 30vh), 190px);
+  width: clamp(84px, min(26vw, 24vh), 180px);
   display: flex; flex-direction: column; align-items: center;
   z-index: 4; pointer-events: none;
   animation: bossFloat 3s ease-in-out infinite;
@@ -1238,3 +1238,69 @@ html, body {
 }
 /* các hoạt ảnh trúng đòn / cười nhạo vẫn dùng chung được vì đều
    giữ nguyên translateX(-50%) quanh mốc left mới */
+
+/* ============================================================
+   ======  NÂNG CẤP: DẠY KHI SAI, ÔN LẠI, VÙNG VÔ TẬN  ========
+   ============================================================ */
+
+/* ---------- cô giáo chỉ bé cách làm ---------- */
+.teach-bubble {
+  margin-top: 8px;
+  background: #e8f7ff; border: 3px solid #4cc9f0; border-radius: 16px;
+  padding: 8px 12px;
+  display: flex; gap: 9px; align-items: flex-start;
+  animation: teachIn .45s cubic-bezier(.2, 1.6, .4, 1);
+}
+@keyframes teachIn {
+  0% { transform: translateY(-12px) scale(.92); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+.teach-ico { font-size: clamp(1.2rem, 4vmin, 1.7rem); line-height: 1.1; animation: wiggle 1.4s infinite; }
+.teach-body {
+  font-size: clamp(.82rem, 2.7vmin, 1.05rem); font-weight: 700; color: #0b4f6c;
+  line-height: 1.35;
+}
+.teach-visual {
+  margin-top: 4px;
+  font-size: clamp(1.1rem, 3.8vmin, 1.8rem); line-height: 1.15;
+}
+.teach-visual .clock-svg { width: clamp(58px, 15vmin, 92px); height: auto; }
+.q-visual .clock-svg {
+  width: clamp(80px, 21vmin, 128px); height: auto;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .18));
+}
+
+/* bông hoa đúng nhấp nháy mời bé bước tới */
+.mine.teach-glow { animation: teachGlow 1s ease-in-out infinite; }
+@keyframes teachGlow {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); filter: none; }
+  50% { transform: translate(-50%, -50%) scale(1.09); filter: drop-shadow(0 0 12px #4cc9f0); }
+}
+.mine.teach-glow::after {
+  content: '👉';
+  position: absolute; left: -26%; top: 40%;
+  font-size: clamp(1.1rem, 3.6vmin, 1.7rem);
+  animation: pointNudge .8s ease-in-out infinite;
+}
+@keyframes pointNudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(7px); }
+}
+
+.pop-text.review-pop { color: #a5f3fc; font-size: clamp(.9rem, 3.2vmin, 1.4rem); }
+
+/* ---------- Vùng Đất Bí Ẩn ---------- */
+.endless-btn {
+  background: linear-gradient(180deg, #c9a7ff, #7b5bd1);
+  color: #fff; border-color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .25);
+  animation: endlessGlow 2s ease-in-out infinite;
+}
+@keyframes endlessGlow {
+  0%, 100% { box-shadow: 0 3px 0 rgba(0, 0, 0, .18); }
+  50% { box-shadow: 0 3px 0 rgba(0, 0, 0, .18), 0 0 14px 3px rgba(199, 125, 255, .75); }
+}
+.lose-stats { font-weight: 800; color: #7c3aed; }
+
+/* thẻ chủ đề có thêm chữ "ôn lại" nên cho phép dài hơn */
+.q-badge { max-width: calc(100% - 70px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

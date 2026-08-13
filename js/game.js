@@ -21,10 +21,10 @@
     { x: 12, y: 33 }, { x: 37, y: 20 },
     { x: 63, y: 20 }, { x: 88, y: 33 }
   ];
-  /* Đánh Sếp Bom: chừa chỗ phía trên cho trùm cuối */
+  /* Đánh Sếp Bom: chừa chỗ phía trên cho trùm cuối (bom + tên + thanh ngòi nổ) */
   const SPOTS_BOSS_TALL = [
-    { x: 19, y: 47 }, { x: 78, y: 44 },
-    { x: 22, y: 70 }, { x: 75, y: 71 }
+    { x: 19, y: 52 }, { x: 78, y: 49 },
+    { x: 22, y: 74 }, { x: 75, y: 75 }
   ];
   /* Sân ngang mà đánh trùm: Sếp Bom đứng nép sang trái (xem .wide-layout trong CSS),
      hoa mìn dồn sang phải để không ai che ai. */
@@ -44,6 +44,7 @@
   const IDS = ['hud', 'hudLevel', 'hudScore', 'hudStreak', 'hudStreakChip', 'hudHearts',
     'trail', 'btnMusic', 'btnVoice', 'btnPause',
     'questionCard', 'qBadge', 'qText', 'qVisual', 'btnSpeak', 'hintBubble', 'hintText',
+    'teachBubble', 'teachText', 'teachVisual',
     'stage', 'layerFar', 'layerMid', 'groundDeco', 'field', 'hero', 'heroInner', 'heroPet',
     'shieldAura', 'fx', 'terrainName', 'bossWrap', 'bossArt', 'bossName', 'bossHp', 'startLine',
     'items', 'itemHint', 'itemFifty', 'itemShield', 'cntHint', 'cntFifty', 'cntShield',
@@ -52,9 +53,10 @@
     'btnWardrobeMenu', 'btnAlbumMenu', 'bestScore',
     'quickPlay', 'topics', 'levels', 'btnStart', 'btnQuickBack',
     'winScreen', 'winTitle', 'winStars', 'winScore', 'winMsg', 'winReward', 'winSticker',
-    'btnNext', 'btnHome', 'loseScreen', 'loseMsg', 'btnRetry', 'btnLoseMap',
+    'btnNext', 'btnHome', 'loseScreen', 'loseTitle', 'loseMsg', 'loseStats',
+    'btnRetry', 'btnLoseMap',
     'pauseScreen', 'btnResume', 'btnQuit', 'toastWrap',
-    'btnWardrobeMap', 'btnAlbumMap'];
+    'btnWardrobeMap', 'btnAlbumMap', 'btnEndless'];
 
   /* ---------- trạng thái ---------- */
   const G = {
@@ -76,14 +78,20 @@
     hearts: 3,
     bossHp: 0,
     bossMax: 0,
+    distance: 0,       /* Vùng Đất Bí Ẩn: đã đi được bao xa */
     shieldOn: false,
     busy: true,
     q: null,
     mines: [],
     firstTry: true,
+    wrongThisQ: 0,     /* sai mấy lần ở câu đang hỏi -> sai 2 lần thì chỉ bé cách làm */
+    isReview: false,   /* câu này là câu ôn lại */
     stepTimer: null,
     blinkTimer: null
   };
+
+  /* chế độ nào thì trả lời sai bị mất trái tim */
+  function usesHearts() { return G.mode === 'boss' || G.mode === 'endless'; }
 
   const ITEM_INFO = {
     hint: { ico: '🔍', name: 'Kính lúp' },
@@ -256,12 +264,16 @@
        vẽ ngay dưới trùm cuối - bé nhìn là hiểu ngay còn mấy ngòi. */
     if (G.mode === 'boss') { renderBossHp(); return; }
 
+    /* Vùng vô tận: thanh chạy tới ngôi sao thưởng kế tiếp */
+    const total = G.mode === 'endless' ? Content.ENDLESS.starEvery : G.total;
+    const at = G.mode === 'endless' ? G.distance % Content.ENDLESS.starEvery : G.qIndex;
+
     let html = '';
-    for (let i = 0; i < G.total; i++) {
-      const cls = i < G.qIndex ? 'done' : (i === G.qIndex ? 'now' : '');
+    for (let i = 0; i < total; i++) {
+      const cls = i < at ? 'done' : (i === at ? 'now' : '');
       html += `<i class="${cls}"></i>`;
     }
-    html += '<span class="flag">🚩</span>';
+    html += `<span class="flag">${G.mode === 'endless' ? '⭐' : '🚩'}</span>`;
     el.trail.innerHTML = html;
   }
 
@@ -274,33 +286,65 @@
   }
 
   function renderHearts() {
-    const show = G.mode === 'boss';
+    const show = usesHearts();
     el.hudHearts.hidden = !show;
     if (!show) return;
     el.hudHearts.innerHTML = [0, 1, 2]
       .map(i => `<span class="${i < G.hearts ? '' : 'dim'}">❤️</span>`).join('');
   }
 
-  function renderQuestion(q) {
-    el.qBadge.textContent = Questions.topicIcon(q.topic) + ' ' + Questions.topicName(q.topic);
-    el.qText.textContent = q.prompt;
-
-    if (q.visual && q.visual.type === 'emoji') {
-      el.qVisual.textContent = q.visual.value;
-      el.qVisual.hidden = false;
-    } else if (q.visual && q.visual.type === 'swatch') {
-      el.qVisual.innerHTML = `<span class="swatch-big" style="background:${q.visual.value}"></span>`;
-      el.qVisual.hidden = false;
-    } else {
-      el.qVisual.textContent = '';
-      el.qVisual.hidden = true;
+  /* vẽ phần minh hoạ của câu hỏi (emoji / ô màu / hình vẽ như đồng hồ) */
+  function paintVisual(host, visual) {
+    if (!visual || visual.type === 'none' || !visual.value) {
+      host.textContent = '';
+      host.hidden = true;
+      return;
     }
+    if (visual.type === 'swatch') {
+      host.innerHTML = `<span class="swatch-big" style="background:${visual.value}"></span>`;
+    } else if (visual.type === 'html') {
+      host.innerHTML = visual.value;
+    } else {
+      host.textContent = visual.value;
+    }
+    host.hidden = false;
+  }
+
+  function renderQuestion(q) {
+    el.qBadge.textContent = Questions.topicIcon(q.topic) + ' ' + Questions.topicName(q.topic) +
+      (G.isReview ? ' • ôn lại' : '');
+    el.qText.textContent = q.prompt;
+    paintVisual(el.qVisual, q.visual);
 
     el.questionCard.classList.remove('swap');
     void el.questionCard.offsetWidth;
     el.questionCard.classList.add('swap');
 
     el.hintBubble.hidden = true;
+    el.teachBubble.hidden = true;
+  }
+
+  /* ============================================================
+     CÔ GIÁO CHỈ BÉ - hiện khi bé sai 2 lần ở cùng một câu
+     ============================================================ */
+  function showTeach(q) {
+    const right = q.answers[q.correct].label;
+    const ex = q.explain;
+    const text = ex && ex.text
+      ? ex.text
+      : `Đáp án đúng là "${Questions.plain(right)}". ${q.hint || ''}`;
+
+    el.teachText.textContent = text;
+    paintVisual(el.teachVisual, ex ? ex.visual : null);
+    el.teachBubble.hidden = false;
+    el.hintBubble.hidden = true;
+
+    /* chỉ thẳng vào bông hoa đúng cho bé bước tới */
+    const m = G.mines[q.correct];
+    if (m && !m.dead) m.el.classList.add('teach-glow');
+
+    Sound.item();
+    Sound.speak(Questions.plain(text) + ' Bé chọn bông hoa đang nhấp nháy nhé.');
   }
 
   function renderMines(q) {
@@ -309,7 +353,8 @@
 
     const spots = currentSpots();
     lastLayout = layoutKey();
-    const jit = (lastLayout === 'wide' || lastLayout === 'bwide') ? 1.5 : 3;
+    /* sân trùm cuối chật hơn nên xê dịch ít thôi kẻo hoa chồng lên nhau */
+    const jit = lastLayout === 'tall' ? 3 : 1.5;
 
     q.answers.forEach((ans, i) => {
       const spot = spots[i];
@@ -350,9 +395,29 @@
     Sound.speak(G.q.speak || G.q.prompt);
   }
 
+  /* Cứ khoảng 1/3 số câu, cho bé gặp lại một câu từng làm sai.
+     Đáp án được xếp lại vị trí để bé phải nghĩ chứ không nhớ chỗ. */
+  function pickQuestion() {
+    const missed = Save.data.missed;
+    if (missed.length && Math.random() < 0.32) {
+      const found = Save.takeMissed(G.topicPool);
+      if (found) {
+        const q = JSON.parse(JSON.stringify(found.q));
+        const rightLabel = q.answers[q.correct].label;
+        q.answers = Questions.shuffle(q.answers);
+        q.correct = q.answers.findIndex(a => a.label === rightLabel);
+        G.isReview = true;
+        return q;
+      }
+    }
+    G.isReview = false;
+    return Questions.make(pick(G.topicPool), G.diff);
+  }
+
   function nextQuestion() {
-    G.q = Questions.make(pick(G.topicPool), G.diff);
+    G.q = pickQuestion();
     G.firstTry = true;
+    G.wrongThisQ = 0;
     renderQuestion(G.q);
     renderMines(G.q);
     renderTrail();
@@ -410,7 +475,32 @@
     if (G.shieldOn) setShield(false);
     if (G.streak > 0 && G.streak % 3 === 0) setTimeout(() => giveRandomItem(), 700);
 
+    /* làm đúng ngay lần đầu một câu từng sai -> coi như đã thuộc, xoá khỏi sổ ôn */
+    if (G.isReview && G.firstTry) {
+      Save.forgetMissed(G.q.prompt);
+      popText('THUỘC RỒI! 🎓', mine.x, mine.y, 'review-pop');
+    }
+
     Sound.speak(pickPraiseVoice());
+
+    /* --- Vùng Đất Bí Ẩn: đi tiếp mãi --- */
+    if (G.mode === 'endless') {
+      G.distance++;
+      el.hudLevel.textContent = G.distance;
+      G.diff = Math.min(3, 1 + Math.floor(G.distance / Content.ENDLESS.diffUpEvery));
+      renderTrail();
+
+      if (G.distance % Content.ENDLESS.starEvery === 0) {
+        Save.addStars(1);
+        toast('⭐ Bé đi xa quá! Thưởng 1 sao.');
+      }
+
+      setTimeout(() => {
+        if (G.distance % Content.ENDLESS.terrainEvery === 0) marchForward();
+        else nextQuestion();
+      }, 1150);
+      return;
+    }
 
     if (G.mode === 'boss') {
       G.bossHp--;
@@ -441,8 +531,13 @@
 
   /* ---------- SAI ---------- */
   function onWrong(mine) {
+    const firstMiss = G.firstTry;
     G.firstTry = false;
+    G.wrongThisQ++;
     mine.dead = true;
+
+    /* ghi vào sổ để lần sau cho bé gặp lại câu này */
+    if (firstMiss && !G.isReview) Save.remember(G.q);
 
     /* Trái tim chống bom cứu bé */
     if (G.shieldOn) {
@@ -469,10 +564,10 @@
     G.mistakes++;
     el.hudStreak.textContent = 0;
 
-    if (G.mode === 'boss') {
+    if (usesHearts()) {
       G.hearts--;
       renderHearts();
-      laughBoss();
+      if (G.mode === 'boss') laughBoss();
     }
 
     /* bé bị hất về vạch xuất phát */
@@ -483,10 +578,20 @@
       el.hero.classList.remove('blast');
       setTimeout(() => el.hero.classList.remove('dizzy'), 500);
 
-      if (G.mode === 'boss' && G.hearts <= 0) { bossLose(); return; }
+      if (usesHearts() && G.hearts <= 0) {
+        if (G.mode === 'boss') bossLose(); else endlessEnd();
+        return;
+      }
 
       G.busy = false;
-      Sound.speak(G.mode === 'boss'
+
+      /* sai tới lần thứ hai ở cùng một câu -> chỉ luôn cách làm cho bé */
+      if (G.wrongThisQ >= 2) {
+        showTeach(G.q);
+        return;
+      }
+
+      Sound.speak(usesHearts()
         ? 'Ối! Bé mất một trái tim rồi. Cẩn thận nhé!'
         : 'Ối! Sai rồi. Bé quay lại vạch xuất phát và thử lại nhé.');
     }, 900);
@@ -567,7 +672,10 @@
     stopWalk();
     Sound.wrong();
     const zone = Content.ZONES[G.zone - 1];
+    el.loseTitle.textContent = 'Sếp Bom mạnh quá!';
     el.loseMsg.textContent = `${zone.boss.name} vẫn còn ngòi nổ. Bé nghỉ một chút rồi thử lại nhé!`;
+    el.loseStats.hidden = true;
+    el.btnRetry.textContent = '🔁 THỬ LẠI';
     el.loseScreen.hidden = false;
     Sound.speak('Không sao đâu! Bé thử lại lần nữa nhé.');
   }
@@ -587,8 +695,8 @@
 
     setTimeout(() => {
       /* Hành trình: đi sâu hơn vào cùng một vùng (cảnh vật đổi, địa hình giữ nguyên).
-         Chơi nhanh: sang hẳn địa hình mới. */
-      if (G.mode === 'free') {
+         Chơi nhanh / vùng vô tận: sang hẳn địa hình mới. */
+      if (G.mode === 'free' || G.mode === 'endless') {
         G.terrainIdx++;
         applyTerrain(true);
       } else {
@@ -818,6 +926,55 @@
     firstTimeTip();
   }
 
+  /* --- Vùng Đất Bí Ẩn: đi được càng xa càng giỏi --- */
+  function startEndless() {
+    const E = Content.ENDLESS;
+    G.mode = 'endless';
+    G.topicPool = ['mix'];
+    G.diff = 1;
+    G.score = 0;
+    G.distance = 0;
+    G.terrainIdx = 0;
+    G.total = E.starEvery;
+
+    resetRun();
+    G.hearts = E.hearts;
+    enterStage();
+    applyTerrain(true);
+
+    el.hudLevel.textContent = 0;
+    el.stage.classList.remove('boss-mode');
+    el.hud.classList.remove('boss-hud');
+    el.bossWrap.hidden = true;
+    renderHearts();
+    renderTrail();
+    nextQuestion();
+    Sound.speak('Vùng đất bí ẩn! Bé đi được càng xa càng giỏi nhé.');
+  }
+
+  function endlessEnd() {
+    G.screen = 'lose';
+    G.busy = true;
+    stopWalk();
+
+    const stars = Math.floor(G.distance / Content.ENDLESS.starEvery);
+    const isRecord = Save.setEndless(G.distance);
+
+    el.loseTitle.textContent = isRecord ? 'KỶ LỤC MỚI! 🏆' : 'Bé về nhà an toàn 🏠';
+    el.loseMsg.textContent = `Bé đã đi được ${G.distance} chặng trong Vùng Đất Bí Ẩn!`;
+    el.loseStats.textContent =
+      `🏆 Kỷ lục: ${Save.data.endlessBest} chặng   •   ⭐ Nhận được: ${stars} sao`;
+    el.loseStats.hidden = false;
+    el.btnRetry.textContent = '🔁 ĐI LẦN NỮA';
+    el.loseScreen.hidden = false;
+
+    Sound.levelUp();
+    if (isRecord) confetti();
+    Sound.speak(isRecord
+      ? `Kỷ lục mới! Bé đi được ${G.distance} chặng.`
+      : `Bé đi được ${G.distance} chặng. Giỏi lắm!`);
+  }
+
   /* --- Chơi nhanh --- */
   function startFree() {
     G.mode = 'free';
@@ -900,6 +1057,7 @@
     el.field.innerHTML = '';
     document.body.dataset.playing = '0';
     if (global.PWA) PWA.keepAwake(false);
+    el.btnEndless.hidden = !Save.endlessUnlocked();
     Journey.open(true);
   }
 
@@ -1023,9 +1181,14 @@
       else startNode(G.zone, G.node);
     });
 
-    /* --- thua trận boss --- */
-    el.btnRetry.addEventListener('click', () => { Sound.click(); startNode(G.zone, G.node); });
+    /* --- thua trận boss / hết đường ở vùng vô tận --- */
+    el.btnRetry.addEventListener('click', () => {
+      Sound.click();
+      if (G.mode === 'endless') startEndless();
+      else startNode(G.zone, G.node);
+    });
     el.btnLoseMap.addEventListener('click', () => { Sound.click(); goMap(); });
+    el.btnEndless.addEventListener('click', () => { Sound.resume(); Sound.click(); startEndless(); });
 
     /* --- web app --- */
     el.btnInstall.addEventListener('click', async () => {

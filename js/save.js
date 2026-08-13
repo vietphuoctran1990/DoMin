@@ -15,12 +15,18 @@
     equipped: { cap: 'cap_army', uni: 'uni_green', acc: 'acc_none', pet: 'pet_none' },
     stickers: [],
     items: { hint: 1, fifty: 1, shield: 1 },
+    missed: [],          /* câu bé làm sai, để cho gặp lại mà ôn */
+    weak: {},            /* { math: 3 } - đếm số lần sai theo chủ đề */
+    endlessBest: 0,      /* kỷ lục Vùng Đất Bí Ẩn */
+    endlessPlayed: 0,
     music: true,
     voice: true,
     topic: 'mix',
     diff: 1,
     tutorial: false
   };
+
+  const MAX_MISSED = 12;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
@@ -153,6 +159,57 @@
       const left = C.STICKERS.filter(s => !this.hasSticker(s.id));
       if (!left.length) return null;
       return this.addSticker(left[Math.floor(Math.random() * left.length)].id);
+    },
+
+    /* ============================================================
+       ÔN LẠI: nhớ những câu bé làm sai để cho gặp lại
+       ============================================================ */
+    remember(q) {
+      if (!q) return;
+      this.data.weak[q.topic] = (this.data.weak[q.topic] || 0) + 1;
+      /* đã có câu y hệt trong sổ thì thôi */
+      if (this.data.missed.some(m => m.prompt === q.prompt)) { this.commit(); return; }
+      this.data.missed.push({
+        topic: q.topic, prompt: q.prompt, speak: q.speak, hint: q.hint,
+        explain: q.explain || null, visual: q.visual,
+        answers: q.answers, correct: q.correct
+      });
+      while (this.data.missed.length > MAX_MISSED) this.data.missed.shift();
+      this.commit();
+    },
+
+    /* Lấy một câu cũ để ôn lại (chỉ lấy câu thuộc chủ đề đang chơi) */
+    takeMissed(topics) {
+      const list = this.data.missed
+        .map((m, i) => ({ m, i }))
+        .filter(x => !topics || topics.indexOf('mix') >= 0 || topics.indexOf(x.m.topic) >= 0);
+      if (!list.length) return null;
+      const chosen = list[Math.floor(Math.random() * list.length)];
+      return { q: chosen.m, index: chosen.i };
+    },
+
+    /* Bé làm đúng câu ôn tập -> xoá khỏi sổ */
+    forgetMissed(prompt) {
+      const i = this.data.missed.findIndex(m => m.prompt === prompt);
+      if (i >= 0) { this.data.missed.splice(i, 1); this.commit(); }
+    },
+
+    /* ---------- kỷ lục vùng vô tận ---------- */
+    setEndless(dist) {
+      this.data.endlessPlayed++;
+      if (dist > this.data.endlessBest) {
+        this.data.endlessBest = dist;
+        this.commit();
+        return true;
+      }
+      this.commit();
+      return false;
+    },
+
+    /* Đã hạ trùm cuối chưa -> mở Vùng Đất Bí Ẩn */
+    endlessUnlocked() {
+      const C = global.Content;
+      return this.nodeStars(C.nodeId(C.ZONES.length, C.NODES_PER_ZONE)) > 0;
     },
 
     /* ---------- vật phẩm ---------- */

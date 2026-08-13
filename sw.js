@@ -3,7 +3,7 @@
    Cho phép bé chơi được cả khi không có mạng (offline).
    Đổi CACHE_VERSION mỗi lần cập nhật game.
    ============================================================ */
-const CACHE_VERSION = 'domin-v2';
+const CACHE_VERSION = 'domin-v3';
 
 const ASSETS = [
   './',

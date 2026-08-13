@@ -22,13 +22,13 @@
     },
     {
       key: 'forest', name: 'Rừng Xanh Bí Ẩn', icon: '🌲',
-      topics: ['animal', 'shape'], diff: 2,
+      topics: ['animal', 'shape', 'letter'], diff: 2,
       boss: { name: 'Sếp Bom Rừng', emoji: '🦁', hp: 6 },
       intro: 'Trong rừng có nhiều bạn thú. Bé nhận ra hết không?'
     },
     {
       key: 'snow', name: 'Đỉnh Núi Tuyết', icon: '❄️',
-      topics: ['riddle', 'math'], diff: 2,
+      topics: ['riddle', 'math', 'life'], diff: 2,
       boss: { name: 'Sếp Bom Băng', emoji: '🧊', hp: 6 },
       intro: 'Lạnh quá! Bé giải câu đố cho ấm người nào.'
     },
@@ -42,6 +42,19 @@
 
   const NODES_PER_ZONE = 4;          /* 3 chặng thường + 1 boss */
   const QUESTIONS_PER_NODE = 8;
+
+  /* ============================================================
+     VÙNG ĐẤT BÍ ẨN - chế độ vô tận, mở sau khi hạ trùm cuối
+     ============================================================ */
+  const ENDLESS = {
+    name: 'Vùng Đất Bí Ẩn',
+    icon: '🌌',
+    hearts: 3,
+    terrainEvery: 4,        /* cứ 4 câu đúng lại sang cảnh mới */
+    diffUpEvery: 6,         /* cứ 6 câu đúng lại khó hơn một bậc */
+    starEvery: 5,           /* cứ đi được 5 chặng thì thưởng 1 sao */
+    intro: 'Đi được càng xa càng giỏi! Sai 3 lần là phải quay về nhé.'
+  };
 
   /* Vị trí các chặng trên bản đồ (% khung bản đồ):
      đường đi zigzag từ dưới trái leo dần lên trên phải */
@@ -139,7 +152,7 @@
   const BOSS_STICKERS = ['st_medal', 'st_whale', 'st_owl', 'st_snow', 'st_planet'];
 
   global.Content = {
-    ZONES, NODES_PER_ZONE, QUESTIONS_PER_NODE, NODE_SPOTS,
+    ZONES, NODES_PER_ZONE, QUESTIONS_PER_NODE, NODE_SPOTS, ENDLESS,
     CAPS, UNIFORMS, ACCESSORIES, PETS, SLOTS, findItem,
     STICKERS, BOSS_STICKERS,
     uniform: id => UNIFORMS.find(u => u.id === id) || UNIFORMS[0],

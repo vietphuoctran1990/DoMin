@@ -72,6 +72,23 @@ Mỗi câu trả lời đúng cắt được một ngòi; trả lời sai thì b
 và Sếp Bom cười khoái chí. Hết tim thì thử lại — **bé không mất sao hay đồ đạc gì cả**,
 chỉ cần bấm “Thử lại”.
 
+## 🌌 Vùng Đất Bí Ẩn (chế độ vô tận)
+
+Mở khoá sau khi bé hạ Sếp Bom cuối cùng. Câu hỏi sinh ra không bao giờ hết, khó dần
+theo từng chặng, bé có **3 trái tim** — đi được càng xa càng giỏi. Game ghi lại
+**kỷ lục** của bé và thưởng 1 ⭐ cho mỗi 5 chặng đi được. Đây là phần giữ bé quay lại
+chơi sau khi đã đi hết hành trình.
+
+## 👩‍🏫 Bé sai thì được chỉ, không bị bỏ mặc
+
+- Sai **lần 1**: mìn nổ, bé quay về vạch xuất phát và thử lại.
+- Sai **lần 2** ở cùng một câu: **cô giáo hiện ra chỉ cách làm** bằng hình minh hoạ
+  (ví dụ 3 + 1 → 🍎🍎🍎 thêm 🍎 = 4 quả), đọc to lời giải thích, và bông hoa đúng
+  nhấp nháy kèm ngón tay 👉 mời bé bước tới. Bé luôn tự tay chọn đáp án đúng.
+- Những câu bé từng sai được **ghi vào sổ và cho gặp lại** ở các chặng sau
+  (khoảng 1/3 số câu, đáp án xếp lại vị trí để bé phải nghĩ chứ không nhớ chỗ).
+  Làm đúng ngay lần đầu thì câu đó được xoá khỏi sổ — bé thấy dòng chữ *"THUỘC RỒI! 🎓"*.
+
 ## 🎒 Tủ đồ & 🏅 Album sticker
 
 Sao ⭐ kiếm được ở mỗi chặng dùng để **mua đồ cho nhân vật** trong Tủ đồ:
@@ -87,12 +104,24 @@ Bé xem lại cả bộ trong **🏅 Album**.
 
 ## 📚 Chủ đề câu hỏi
 
-➕ Phép tính · 🔢 Đếm số · 🎨 Màu sắc · 🐻 Con vật · 🧩 Câu đố · 🔷 Hình khối · 🎲 Tổng hợp
+| Chủ đề | Gồm những gì |
+|---|---|
+| ➕ **Phép tính** | cộng, trừ, so sánh lớn/bé nhất, chia đều cho các bạn |
+| 🔢 **Đếm số** | đếm số lượng, số liền trước/liền sau, tìm số còn thiếu trong dãy |
+| 🎨 **Màu sắc** | nhận màu và màu của đồ vật quen thuộc |
+| 🐻 **Con vật** | 42 câu về tiếng kêu, nơi sống, đặc điểm |
+| 🧩 **Câu đố** | 42 câu đố dân gian, đồ vật, nghề nghiệp, thiên nhiên |
+| 🔷 **Hình khối** | 22 câu về hình tròn, vuông, tam giác, chữ nhật… |
+| 🔤 **Chữ cái** | chữ cái đầu của từ, tìm từ theo chữ, thứ tự bảng chữ cái |
+| ⏰ **Giờ & Tiền** | xem đồng hồ (có hình vẽ), cộng tiền, thứ trong tuần |
+| 🎲 **Tổng hợp** | trộn tất cả |
 
 Ba mức độ khó: 🐣 **Dễ** (cộng trong phạm vi 5, đếm đến 5) · 🐤 **Vừa** (cộng trừ trong 10)
 · 🦅 **Giỏi** (cộng trừ trong 20). Càng qua nhiều chặng, câu hỏi càng khó dần.
 
-Câu hỏi được **sinh ngẫu nhiên** ở mỗi ván nên bé chơi lại không bị lặp.
+Phần lớn câu hỏi được **sinh ngẫu nhiên** nên gần như không lặp; các ngân hàng cố định
+(con vật, câu đố, hình khối, từ vựng) có tổng cộng hơn 130 câu và có bộ nhớ chống lặp lại
+câu vừa hỏi.
 
 ## 🗺️ Địa hình
 
@@ -143,7 +172,10 @@ dọc xếp hoa 2 hàng, xoay ngang thì xếp thành vòng cung một hàng cho
   phát rồi thử lại, để bé không sợ sai.
 - Tiến trình hành trình, sao, đồ đã mua và sticker đều lưu trong máy (localStorage) —
   bé tắt game rồi mở lại vẫn còn nguyên.
-- Thua trận Sếp Bom **không mất gì cả**, chỉ chơi lại; game không có "game over".
+- Thua trận Sếp Bom hay hết tim ở Vùng Đất Bí Ẩn đều **không mất gì cả**, chỉ chơi lại;
+  game không có màn hình "game over" gây nản.
+- Game **ghi nhớ những dạng câu bé hay sai** để cho ôn lại, và tự giải thích cách làm
+  khi bé sai hai lần cùng một câu.
 - Game tôn trọng thiết lập `prefers-reduced-motion` của hệ điều hành: nếu bật, hoạt
   ảnh sẽ được giảm tối đa.
 - **Không quảng cáo, không thu thập dữ liệu, không cần tài khoản.** Game không gửi

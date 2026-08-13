@@ -249,6 +249,38 @@
   }
 
   /* ============================================================
+     ĐỒNG HỒ - dùng cho câu hỏi xem giờ
+     ============================================================ */
+  function clock(h, m) {
+    const ha = (h % 12) * 30 + (m || 0) * 0.5;
+    const ma = (m || 0) * 6;
+    let ticks = '';
+    for (let i = 0; i < 12; i++) {
+      const big = i % 3 === 0;
+      ticks += `<rect x="49" y="${big ? 8 : 10}" width="${big ? 3 : 1.8}" height="${big ? 8 : 5}"
+                 rx="1" fill="${big ? '#3a2c46' : '#b6adc4'}"
+                 transform="rotate(${i * 30} 50 50)"/>`;
+    }
+    return `
+<svg class="clock-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Đồng hồ chỉ ${h} giờ ${m || 0} phút">
+  <circle cx="50" cy="50" r="47" fill="#ffd166"/>
+  <circle cx="50" cy="50" r="42" fill="#fffdf5" stroke="#fff" stroke-width="2"/>
+  ${ticks}
+  <text x="50" y="26" font-size="13" font-weight="800" text-anchor="middle" fill="#3a2c46">12</text>
+  <text x="76" y="55" font-size="13" font-weight="800" text-anchor="middle" fill="#3a2c46">3</text>
+  <text x="50" y="82" font-size="13" font-weight="800" text-anchor="middle" fill="#3a2c46">6</text>
+  <text x="24" y="55" font-size="13" font-weight="800" text-anchor="middle" fill="#3a2c46">9</text>
+  <rect x="47.6" y="26" width="4.8" height="26" rx="2.4" fill="#3a2c46"
+        transform="rotate(${ha} 50 50)"/>
+  <rect x="48.4" y="15" width="3.2" height="37" rx="1.6" fill="#ef476f"
+        transform="rotate(${ma} 50 50)"/>
+  <circle cx="50" cy="50" r="4" fill="#3a2c46"/>
+  <circle cx="50" cy="50" r="1.8" fill="#fff"/>
+</svg>`;
+  }
+
+  /* ============================================================
      BÔNG HOA MÌN
      ============================================================ */
   const PETAL_SETS = [
@@ -347,5 +379,5 @@
     fillLayer(refs.ground, terrain.ground, { count: 8, bMin: 2, bMax: 18, sMin: 3, sMax: 5.5, op: 1 });
   }
 
-  global.Sprites = { hero, boss, flower, TERRAINS, decorate, PETAL_SETS };
+  global.Sprites = { hero, boss, clock, flower, TERRAINS, decorate, PETAL_SETS };
 })(window);
