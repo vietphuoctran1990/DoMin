@@ -52,21 +52,38 @@ Khi bé đang chơi, game **giữ màn hình không tự tắt** (Wake Lock) và
 | ✅ | Chọn **đúng** → bé reo mừng, được cộng điểm và đi tiếp câu sau. |
 | 💥 | Chọn **sai** → mìn nổ, bé bị hất **quay về vạch xuất phát**, bông hoa đó héo đi và bé thử lại. |
 | 🚩 | Mỗi chặng gồm **8 câu**. Hết chặng bé được chấm **1–3 ngôi sao** (không sai câu nào = 3 sao). |
-| 🗺️ | Cứ **3 câu đúng**, bé hành quân sang một **địa hình mới**. |
+| 🗺️ | Cứ **3 câu đúng**, bé hành quân sâu hơn vào vùng đất mới. |
 
 **Điều khiển:** chạm/bấm vào bông hoa. Trên máy tính có thể dùng phím `1` `2` `3` `4`
 để chọn đáp án, `H` kính lúp, `F` 50:50, `S` trái tim.
 
-## 🎒 Vật phẩm hỗ trợ
+## 🗺️ Hành trình & Sếp Bom
 
-| Vật phẩm | Tác dụng |
-|---|---|
-| 🔍 **Kính lúp** | Hiện (và đọc to) một câu gợi ý dẫn dắt bé tới đáp án đúng. |
-| ✂️ **50 : 50** | Loại bỏ 2 đáp án sai, chỉ còn 2 bông hoa để bé chọn. |
-| 💖 **Trái tim chống bom** | Kích hoạt lá chắn: nếu chọn sai, mìn **không nổ** và bé **không bị lùi về**. |
+Ngoài chế độ **⚡ Chơi nhanh** (chọn chủ đề rồi chơi liên tục), game có chế độ
+**🗺️ Hành trình** — trục chính của trò chơi:
 
-Bé bắt đầu với mỗi loại 1 cái, nhận thêm 1 vật phẩm ngẫu nhiên sau **mỗi 3 câu đúng liên tiếp**
-và sau mỗi chặng hoàn thành.
+- **5 vùng đất**, mỗi vùng **3 chặng thường + 1 trận Sếp Bom**.
+- Bản đồ hiện rõ đường đi, số sao đã đạt từng chặng, và **bé đang đứng ở đâu**.
+- Chặng sau mở khi bé qua chặng trước; **vùng sau mở khi hạ được Sếp Bom** của vùng trước.
+- Mỗi vùng có chủ đề câu hỏi riêng và độ khó tăng dần.
+
+**Trận Sếp Bom** 💣 là điểm nhấn cuối mỗi vùng: một quả bom khổng lồ có **5–7 ngòi nổ**.
+Mỗi câu trả lời đúng cắt được một ngòi; trả lời sai thì bé mất **1 trong 3 trái tim**
+và Sếp Bom cười khoái chí. Hết tim thì thử lại — **bé không mất sao hay đồ đạc gì cả**,
+chỉ cần bấm “Thử lại”.
+
+## 🎒 Tủ đồ & 🏅 Album sticker
+
+Sao ⭐ kiếm được ở mỗi chặng dùng để **mua đồ cho nhân vật** trong Tủ đồ:
+
+- **Mũ:** mũ bộ đội · mũ tai bèo · mũ sinh nhật · mũ phi hành gia · vương miện
+- **Quân phục:** xanh bộ đội · xanh hải quân · cam sa mạc · hồng kẹo ngọt · tím vũ trụ
+- **Phụ kiện:** khăn quàng đỏ · ba lô · kính râm · đôi cánh
+- **Thú cưng đi theo bé:** Cún Mực · Mèo Mun · Gà Bông · Cánh Cụt · Rô Bốt
+
+Đồ bé mặc hiện ngay trên bản đồ và trong lúc chơi. Ngoài ra mỗi chặng hoàn thành
+tặng **1 sticker mới** trong bộ sưu tập **24 sticker**, hạ Sếp Bom được sticker hiếm.
+Bé xem lại cả bộ trong **🏅 Album**.
 
 ## 📚 Chủ đề câu hỏi
 
@@ -101,10 +118,14 @@ index.html              khung giao diện
 css/style.css           giao diện, hoạt ảnh, bảng màu 5 địa hình
 css/fonts.css           khai báo font Baloo 2 nhúng sẵn
 fonts/*.woff2           font Baloo 2 (SIL OFL 1.1) - để chơi offline
+js/content.js           hành trình 5 vùng, trang phục, danh sách sticker
+js/save.js              lưu tiến trình, sao, đồ đã mua (localStorage)
 js/questions.js         ngân hàng + bộ sinh câu hỏi theo chủ đề và độ khó
 js/audio.js             nhạc nền, hiệu ứng âm thanh, giọng đọc tiếng Việt
 js/sprites.js           nhân vật, bông hoa mìn, trang trí địa hình (SVG vẽ tay)
-js/game.js              luồng chơi, vật phẩm, tính điểm, hiệu ứng
+js/map.js               màn hình bản đồ hành trình
+js/collection.js        tủ đồ và album sticker
+js/game.js              luồng chơi, Sếp Bom, vật phẩm, tính điểm, hiệu ứng
 js/pwa.js               cài vào máy, offline, toàn màn hình, giữ màn hình sáng
 sw.js                   service worker (bộ nhớ đệm để chơi offline)
 manifest.webmanifest    khai báo web app
@@ -120,7 +141,9 @@ dọc xếp hoa 2 hàng, xoay ngang thì xếp thành vòng cung một hàng cho
 
 - Trả lời sai **không bị trừ điểm và không thua cuộc** — bé chỉ quay lại vạch xuất
   phát rồi thử lại, để bé không sợ sai.
-- Điểm cao nhất, chủ đề và độ khó bé chọn được lưu lại trong máy (localStorage).
+- Tiến trình hành trình, sao, đồ đã mua và sticker đều lưu trong máy (localStorage) —
+  bé tắt game rồi mở lại vẫn còn nguyên.
+- Thua trận Sếp Bom **không mất gì cả**, chỉ chơi lại; game không có "game over".
 - Game tôn trọng thiết lập `prefers-reduced-motion` của hệ điều hành: nếu bật, hoạt
   ảnh sẽ được giảm tối đa.
 - **Không quảng cáo, không thu thập dữ liệu, không cần tài khoản.** Game không gửi

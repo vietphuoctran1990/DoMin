@@ -45,6 +45,7 @@
       <div class="chip chip-level"><span class="chip-ico">🎖️</span><span id="hudLevel">1</span></div>
       <div class="chip chip-score"><span class="chip-ico">⭐</span><span id="hudScore">0</span></div>
       <div class="chip chip-streak" id="hudStreakChip"><span class="chip-ico">🔥</span><span id="hudStreak">0</span></div>
+      <div class="hearts" id="hudHearts" hidden></div>
     </div>
 
     <div class="hud-progress" aria-label="Tiến trình chặng">
@@ -80,11 +81,19 @@
     <div class="ground"></div>
     <div class="ground-deco" id="groundDeco"></div>
 
+    <!-- Sếp Bom -->
+    <div class="boss-wrap" id="bossWrap" hidden>
+      <div class="boss-art" id="bossArt"></div>
+      <div class="boss-name" id="bossName"></div>
+      <div class="boss-hp" id="bossHp"></div>
+    </div>
+
     <div class="start-line" id="startLine"><span>XUẤT PHÁT</span></div>
     <div class="field" id="field"></div>
 
     <div class="hero" id="hero">
       <div class="hero-inner" id="heroInner"></div>
+      <span class="hero-pet" id="heroPet" hidden></span>
       <div class="shield-aura" id="shieldAura" hidden>💖</div>
     </div>
 
@@ -115,24 +124,26 @@
   <div class="overlay overlay-menu" id="menu">
     <div class="menu-sky"></div>
     <div class="menu-card">
-      <div class="menu-hero" id="menuHero"></div>
+      <div class="menu-hero-wrap">
+        <div class="menu-hero" id="menuHero"></div>
+        <span class="menu-pet" id="menuPet" hidden></span>
+      </div>
+
       <h1 class="title">
         <span class="title-l">Chiến Sĩ</span>
         <span class="title-b">DÒ MÌN</span>
       </h1>
-      <p class="subtitle">Trả lời đúng để bước qua bãi hoa mìn nhé! 🌸</p>
 
-      <p class="menu-label">Bé chọn chủ đề nào?</p>
-      <div class="topics" id="topics"></div>
+      <div class="star-bank"><span>⭐</span><b id="menuStars">0</b><span class="sb-label">sao của bé</span></div>
 
-      <p class="menu-label">Độ khó</p>
-      <div class="levels" id="levels">
-        <button class="lvl-btn is-on" data-diff="1">🐣 Dễ</button>
-        <button class="lvl-btn" data-diff="2">🐤 Vừa</button>
-        <button class="lvl-btn" data-diff="3">🦅 Giỏi</button>
+      <button class="big-btn" id="btnJourney">🗺️ HÀNH TRÌNH</button>
+      <button class="big-btn btn-alt" id="btnQuick">⚡ CHƠI NHANH</button>
+
+      <div class="menu-tools">
+        <button class="tool-btn" id="btnWardrobeMenu">🎒 Tủ đồ</button>
+        <button class="tool-btn" id="btnAlbumMenu">🏅 Album</button>
       </div>
 
-      <button class="big-btn" id="btnStart">▶️ BẮT ĐẦU</button>
       <p class="best-score" id="bestScore"></p>
 
       <div class="menu-tools">
@@ -146,6 +157,80 @@
     </div>
   </div>
 
+  <!-- ============ CHƠI NHANH ============ -->
+  <div class="overlay overlay-quick" id="quickPlay" hidden>
+    <div class="menu-card">
+      <h2 class="panel-title">⚡ Chơi nhanh</h2>
+      <p class="menu-label">Bé chọn chủ đề nào?</p>
+      <div class="topics" id="topics"></div>
+
+      <p class="menu-label">Độ khó</p>
+      <div class="levels" id="levels">
+        <button class="lvl-btn is-on" data-diff="1">🐣 Dễ</button>
+        <button class="lvl-btn" data-diff="2">🐤 Vừa</button>
+        <button class="lvl-btn" data-diff="3">🦅 Giỏi</button>
+      </div>
+
+      <button class="big-btn" id="btnStart">▶️ BẮT ĐẦU</button>
+      <button class="ghost-btn" id="btnQuickBack">↩️ Quay lại</button>
+    </div>
+  </div>
+
+  <!-- ============ BẢN ĐỒ HÀNH TRÌNH ============ -->
+  <div class="overlay overlay-map" id="mapScreen" hidden>
+    <div class="map-top">
+      <button class="icon-btn" id="mapHome" aria-label="Về màn hình chính">🏠</button>
+      <div class="map-zone">
+        <div class="map-zone-name" id="mapZoneName"></div>
+        <div class="map-zone-intro" id="mapZoneIntro"></div>
+      </div>
+      <div class="chip chip-score"><span class="chip-ico">⭐</span><span id="mapStars">0</span></div>
+    </div>
+
+    <div class="map-body" id="mapBody" data-terrain="meadow">
+      <div class="map-deco" id="mapDeco"></div>
+      <div class="map-nodes" id="mapNodes"></div>
+      <button class="map-arrow left" id="mapPrev" aria-label="Vùng trước">◀</button>
+      <button class="map-arrow right" id="mapNext" aria-label="Vùng sau">▶</button>
+    </div>
+
+    <div class="map-foot">
+      <button class="tool-btn" id="btnWardrobeMap">🎒 Tủ đồ</button>
+      <button class="tool-btn" id="btnAlbumMap">🏅 Album</button>
+    </div>
+  </div>
+
+  <!-- ============ TỦ ĐỒ ============ -->
+  <div class="overlay overlay-shelf" id="wardrobe" hidden>
+    <div class="shelf-card">
+      <div class="shelf-head">
+        <h2>🎒 Tủ đồ của bé</h2>
+        <div class="chip chip-score"><span class="chip-ico">⭐</span><span id="wardStars">0</span></div>
+      </div>
+
+      <div class="shelf-preview">
+        <div class="ward-hero" id="wardHero"></div>
+        <span class="ward-pet" id="wardPet" hidden></span>
+      </div>
+
+      <div class="shelf-tabs" id="wardTabs"></div>
+      <div class="shelf-grid" id="wardGrid"></div>
+      <button class="ghost-btn" id="wardClose">✅ Xong</button>
+    </div>
+  </div>
+
+  <!-- ============ ALBUM STICKER ============ -->
+  <div class="overlay overlay-shelf" id="album" hidden>
+    <div class="shelf-card">
+      <div class="shelf-head">
+        <h2>🏅 Album sticker</h2>
+      </div>
+      <p class="album-count" id="albumCount"></p>
+      <div class="sticker-grid" id="albumGrid"></div>
+      <button class="ghost-btn" id="albumClose">✅ Xong</button>
+    </div>
+  </div>
+
   <!-- ============ QUA CHẶNG ============ -->
   <div class="overlay overlay-win" id="winScreen" hidden>
     <div class="win-card">
@@ -154,10 +239,25 @@
       <div class="stars" id="winStars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
       <p class="win-line">Điểm chặng này: <b id="winScore">0</b></p>
       <p class="win-line" id="winMsg">Bé đã vượt qua bãi mìn an toàn!</p>
+      <div class="win-sticker" id="winSticker" hidden></div>
       <div class="win-reward" id="winReward"></div>
       <div class="win-btns">
         <button class="big-btn" id="btnNext">➡️ ĐI TIẾP</button>
         <button class="ghost-btn" id="btnHome">🏠 Về nhà</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THUA TRẬN SẾP BOM ============ -->
+  <div class="overlay overlay-win" id="loseScreen" hidden>
+    <div class="win-card lose-card">
+      <div class="win-flag">💣</div>
+      <h2>Sếp Bom mạnh quá!</h2>
+      <p class="win-line" id="loseMsg"></p>
+      <p class="win-line small-note">Bé không mất sao hay đồ đạc gì đâu nhé 💚</p>
+      <div class="win-btns">
+        <button class="big-btn" id="btnRetry">🔁 THỬ LẠI</button>
+        <button class="ghost-btn" id="btnLoseMap">🗺️ Về bản đồ</button>
       </div>
     </div>
   </div>
@@ -168,7 +268,7 @@
       <h2>⏸️ Nghỉ một chút nhé</h2>
       <div class="pause-btns">
         <button class="big-btn" id="btnResume">▶️ Chơi tiếp</button>
-        <button class="ghost-btn" id="btnQuit">🏠 Về nhà</button>
+        <button class="ghost-btn" id="btnQuit">↩️ Thoát chặng</button>
       </div>
     </div>
   </div>
@@ -179,9 +279,13 @@
 </div>
 
 <script src="js/pwa.js"></script>
+<script src="js/content.js"></script>
+<script src="js/save.js"></script>
 <script src="js/questions.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/sprites.js"></script>
+<script src="js/map.js"></script>
+<script src="js/collection.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

@@ -1,14 +1,15 @@
 /* ============================================================
    CHIẾN SĨ DÒ MÌN - Logic trò chơi
+   Hai chế độ:
+   - Hành trình: 5 vùng x (3 chặng + 1 trận Sếp Bom)
+   - Chơi nhanh: chọn chủ đề, chơi từng chặng nối tiếp nhau
    ============================================================ */
 (function (global) {
   'use strict';
 
-  const QUESTIONS_PER_LEVEL = 8;   // số câu mỗi chặng
-  const TERRAIN_EVERY = 3;         // cứ 3 câu đúng thì đổi địa hình
+  const TERRAIN_EVERY = 3;   /* chơi nhanh: 3 câu đúng thì sang địa hình mới */
   const WALK_MS = 750;
 
-  /* 4 vị trí đặt hoa mìn (% của sân chơi) */
   /* Sân dọc/vuông: 4 hoa xếp 2 hàng. */
   const SPOTS_TALL = [
     { x: 21, y: 25 }, { x: 74, y: 21 },
@@ -20,66 +21,74 @@
     { x: 12, y: 33 }, { x: 37, y: 20 },
     { x: 63, y: 20 }, { x: 88, y: 33 }
   ];
-  const HOME = { x: 46, y: 86 };
+  /* Đánh Sếp Bom: chừa chỗ phía trên cho trùm cuối */
+  const SPOTS_BOSS_TALL = [
+    { x: 19, y: 47 }, { x: 78, y: 44 },
+    { x: 22, y: 70 }, { x: 75, y: 71 }
+  ];
+  /* Sân ngang mà đánh trùm: Sếp Bom đứng nép sang trái (xem .wide-layout trong CSS),
+     hoa mìn dồn sang phải để không ai che ai. */
+  const SPOTS_BOSS_WIDE = [
+    { x: 36, y: 30 }, { x: 55, y: 20 },
+    { x: 74, y: 26 }, { x: 91, y: 44 }
+  ];
 
-  function currentSpots() {
-    const r = el.stage.getBoundingClientRect();
-    return (r.width / Math.max(1, r.height) >= 2) ? SPOTS_WIDE : SPOTS_TALL;
-  }
+  const HOME = { x: 46, y: 86 };
 
   const $ = id => document.getElementById(id);
   const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
 
   /* ---------- tham chiếu DOM ---------- */
   const el = {};
-  const IDS = ['hud', 'hudLevel', 'hudScore', 'hudStreak', 'hudStreakChip', 'trail',
-    'btnMusic', 'btnVoice', 'btnPause', 'questionCard', 'qBadge', 'qText', 'qVisual',
-    'btnSpeak', 'hintBubble', 'hintText', 'stage', 'layerFar', 'layerMid', 'groundDeco',
-    'field', 'hero', 'heroInner', 'shieldAura', 'fx', 'terrainName', 'items',
-    'itemHint', 'itemFifty', 'itemShield', 'cntHint', 'cntFifty', 'cntShield',
-    'splash', 'startLine', 'btnInstall', 'btnFull', 'iosTip',
-    'menu', 'menuHero', 'topics', 'levels', 'btnStart', 'bestScore',
-    'winScreen', 'winTitle', 'winStars', 'winScore', 'winMsg', 'winReward',
-    'btnNext', 'btnHome', 'pauseScreen', 'btnResume', 'btnQuit', 'toastWrap'];
+  const IDS = ['hud', 'hudLevel', 'hudScore', 'hudStreak', 'hudStreakChip', 'hudHearts',
+    'trail', 'btnMusic', 'btnVoice', 'btnPause',
+    'questionCard', 'qBadge', 'qText', 'qVisual', 'btnSpeak', 'hintBubble', 'hintText',
+    'stage', 'layerFar', 'layerMid', 'groundDeco', 'field', 'hero', 'heroInner', 'heroPet',
+    'shieldAura', 'fx', 'terrainName', 'bossWrap', 'bossArt', 'bossName', 'bossHp', 'startLine',
+    'items', 'itemHint', 'itemFifty', 'itemShield', 'cntHint', 'cntFifty', 'cntShield',
+    'splash', 'btnInstall', 'btnFull', 'iosTip',
+    'menu', 'menuHero', 'menuPet', 'menuStars', 'btnJourney', 'btnQuick',
+    'btnWardrobeMenu', 'btnAlbumMenu', 'bestScore',
+    'quickPlay', 'topics', 'levels', 'btnStart', 'btnQuickBack',
+    'winScreen', 'winTitle', 'winStars', 'winScore', 'winMsg', 'winReward', 'winSticker',
+    'btnNext', 'btnHome', 'loseScreen', 'loseMsg', 'btnRetry', 'btnLoseMap',
+    'pauseScreen', 'btnResume', 'btnQuit', 'toastWrap',
+    'btnWardrobeMap', 'btnAlbumMap'];
 
   /* ---------- trạng thái ---------- */
   const G = {
     screen: 'menu',
-    topic: 'mix',
-    baseDiff: 1,
+    mode: 'free',        /* 'free' | 'journey' | 'boss' */
+    zone: 1,
+    node: 1,
+    topicPool: ['mix'],
+    diff: 1,
     level: 1,
     qIndex: 0,
+    total: Content.QUESTIONS_PER_NODE,
     score: 0,
     levelScore: 0,
     streak: 0,
-    bestStreak: 0,
     mistakes: 0,
     totalCorrect: 0,
     terrainIdx: 0,
-    items: { hint: 1, fifty: 1, shield: 1 },
+    hearts: 3,
+    bossHp: 0,
+    bossMax: 0,
     shieldOn: false,
     busy: true,
     q: null,
     mines: [],
     firstTry: true,
-    stepTimer: null
+    stepTimer: null,
+    blinkTimer: null
   };
 
   const ITEM_INFO = {
     hint: { ico: '🔍', name: 'Kính lúp' },
     fifty: { ico: '✂️', name: '50 : 50' },
     shield: { ico: '💖', name: 'Tim chống bom' }
-  };
-
-  /* ============================================================
-     LƯU TRỮ
-     ============================================================ */
-  const store = {
-    get(k, d) {
-      try { const v = localStorage.getItem('domin_' + k); return v === null ? d : JSON.parse(v); }
-      catch (e) { return d; }
-    },
-    set(k, v) { try { localStorage.setItem('domin_' + k, JSON.stringify(v)); } catch (e) {} }
   };
 
   /* ============================================================
@@ -93,9 +102,9 @@
     setTimeout(() => t.remove(), 2300);
   }
 
-  function popText(text, x, y) {
+  function popText(text, x, y, cls) {
     const p = document.createElement('div');
-    p.className = 'pop-text';
+    p.className = 'pop-text' + (cls ? ' ' + cls : '');
     p.textContent = text;
     p.style.setProperty('--x', x + '%');
     p.style.setProperty('--y', y + '%');
@@ -156,6 +165,27 @@
   /* ============================================================
      NHÂN VẬT
      ============================================================ */
+  function refreshHero() {
+    el.heroInner.innerHTML = Sprites.hero(Save.outfit());
+    const pet = Content.pet(Save.data.equipped.pet);
+    el.heroPet.textContent = pet.emoji || '';
+    el.heroPet.hidden = !pet.emoji;
+    scheduleBlink();
+  }
+
+  /* nháy mắt ngẫu nhiên cho nhân vật trông có hồn hơn */
+  function scheduleBlink() {
+    clearTimeout(G.blinkTimer);
+    G.blinkTimer = setTimeout(() => {
+      const eyes = el.heroInner.querySelector('.eyes');
+      if (eyes) {
+        eyes.classList.add('blink');
+        setTimeout(() => eyes.classList.remove('blink'), 180);
+      }
+      scheduleBlink();
+    }, rnd(2600, 6000));
+  }
+
   function heroTo(x, y) {
     const cur = parseFloat(el.hero.style.left) || HOME.x;
     el.hero.classList.toggle('flip', x < cur - 1);
@@ -186,16 +216,69 @@
   }
 
   /* ============================================================
+     BỐ CỤC HOA MÌN
+     ============================================================ */
+  function currentSpots() {
+    const r = el.stage.getBoundingClientRect();
+    const wide = r.width / Math.max(1, r.height) >= 2;
+    if (G.mode === 'boss') return wide ? SPOTS_BOSS_WIDE : SPOTS_BOSS_TALL;
+    return wide ? SPOTS_WIDE : SPOTS_TALL;
+  }
+
+  let lastLayout = null;
+
+  function layoutKey() {
+    const s = currentSpots();
+    const key = s === SPOTS_WIDE ? 'wide' : s === SPOTS_TALL ? 'tall'
+      : s === SPOTS_BOSS_WIDE ? 'bwide' : 'btall';
+    el.stage.classList.toggle('wide-layout', key === 'wide' || key === 'bwide');
+    return key;
+  }
+
+  function relayoutMines() {
+    const spots = currentSpots();
+    const mode = layoutKey();
+    if (mode === lastLayout || !G.mines.length) { lastLayout = mode; return; }
+    lastLayout = mode;
+    G.mines.forEach((m, i) => {
+      const s = spots[i];
+      m.x = s.x; m.y = s.y;
+      m.el.style.setProperty('--x', s.x + '%');
+      m.el.style.setProperty('--y', s.y + '%');
+    });
+  }
+
+  /* ============================================================
      DỰNG CÂU HỎI
      ============================================================ */
   function renderTrail() {
+    /* Đánh Sếp Bom thì thanh tiến trình nhường chỗ cho thanh ngòi nổ
+       vẽ ngay dưới trùm cuối - bé nhìn là hiểu ngay còn mấy ngòi. */
+    if (G.mode === 'boss') { renderBossHp(); return; }
+
     let html = '';
-    for (let i = 0; i < QUESTIONS_PER_LEVEL; i++) {
+    for (let i = 0; i < G.total; i++) {
       const cls = i < G.qIndex ? 'done' : (i === G.qIndex ? 'now' : '');
       html += `<i class="${cls}"></i>`;
     }
     html += '<span class="flag">🚩</span>';
     el.trail.innerHTML = html;
+  }
+
+  function renderBossHp() {
+    let html = '';
+    for (let i = 0; i < G.bossMax; i++) {
+      html += `<i class="${i < G.bossHp ? '' : 'cut'}">🧨</i>`;
+    }
+    el.bossHp.innerHTML = html;
+  }
+
+  function renderHearts() {
+    const show = G.mode === 'boss';
+    el.hudHearts.hidden = !show;
+    if (!show) return;
+    el.hudHearts.innerHTML = [0, 1, 2]
+      .map(i => `<span class="${i < G.hearts ? '' : 'dim'}">❤️</span>`).join('');
   }
 
   function renderQuestion(q) {
@@ -224,12 +307,12 @@
     el.field.innerHTML = '';
     G.mines = [];
 
-    const order = [0, 1, 2, 3];
     const spots = currentSpots();
-    lastLayout = spots === SPOTS_WIDE ? 'wide' : 'tall';
-    const jit = spots === SPOTS_WIDE ? 1.5 : 3;
+    lastLayout = layoutKey();
+    const jit = (lastLayout === 'wide' || lastLayout === 'bwide') ? 1.5 : 3;
+
     q.answers.forEach((ans, i) => {
-      const spot = spots[order[i]];
+      const spot = spots[i];
       const x = spot.x + rnd(-jit, jit);
       const y = spot.y + rnd(-jit * 0.8, jit * 0.8);
 
@@ -250,7 +333,7 @@
         ? `<span class="swatch" style="background:${ans.color}"></span>` : '';
 
       b.innerHTML =
-        `<div class="mine-art">${Sprites.flower(order[i])}</div>` +
+        `<div class="mine-art">${Sprites.flower(i)}</div>` +
         `<div class="mine-label${size}">${swatch}${inner}</div>` +
         `<div class="stem"></div>`;
 
@@ -260,34 +343,15 @@
     });
   }
 
-  /* Xoay màn hình giữa chừng: dời hoa sang bố cục mới, giữ nguyên hoa đã nổ */
-  let lastLayout = null;
-
-  function relayoutMines() {
-    const spots = currentSpots();
-    const mode = spots === SPOTS_WIDE ? 'wide' : 'tall';
-    if (mode === lastLayout || !G.mines.length) { lastLayout = mode; return; }
-    lastLayout = mode;
-    G.mines.forEach((m, i) => {
-      const s = spots[i];
-      m.x = s.x; m.y = s.y;
-      m.el.style.setProperty('--x', s.x + '%');
-      m.el.style.setProperty('--y', s.y + '%');
-    });
-  }
-
   function speakQuestion() {
-    const q = G.q;
-    if (!q) return;
-    let txt = q.speak || q.prompt;
-    if (q.visual && q.visual.type === 'emoji' && q.topic === 'count') txt = q.speak;
+    if (!G.q) return;
     el.btnSpeak.classList.add('talking');
     setTimeout(() => el.btnSpeak.classList.remove('talking'), 2200);
-    Sound.speak(txt);
+    Sound.speak(G.q.speak || G.q.prompt);
   }
 
   function nextQuestion() {
-    G.q = Questions.make(G.topic, effectiveDiff());
+    G.q = Questions.make(pick(G.topicPool), G.diff);
     G.firstTry = true;
     renderQuestion(G.q);
     renderMines(G.q);
@@ -295,10 +359,6 @@
     heroTo(HOME.x, HOME.y);
     G.busy = false;
     setTimeout(speakQuestion, 380);
-  }
-
-  function effectiveDiff() {
-    return Math.min(3, G.baseDiff + Math.floor((G.level - 1) / 3));
   }
 
   /* ============================================================
@@ -340,31 +400,36 @@
     G.score += gained;
     G.levelScore += gained;
     G.streak++;
-    G.bestStreak = Math.max(G.bestStreak, G.streak);
     G.totalCorrect++;
-    G.qIndex++;
 
     el.hudScore.textContent = G.score;
     el.hudStreak.textContent = G.streak;
     el.hudStreakChip.classList.add('pop');
     setTimeout(() => el.hudStreakChip.classList.remove('pop'), 260);
-    renderTrail();
 
     if (G.shieldOn) setShield(false);
-
-    /* thưởng vật phẩm khi trả lời đúng liên tiếp */
     if (G.streak > 0 && G.streak % 3 === 0) setTimeout(() => giveRandomItem(), 700);
 
     Sound.speak(pickPraiseVoice());
 
+    if (G.mode === 'boss') {
+      G.bossHp--;
+      hitBoss();
+      renderTrail();
+      setTimeout(() => {
+        if (G.bossHp <= 0) bossWin();
+        else nextQuestion();
+      }, 1200);
+      return;
+    }
+
+    G.qIndex++;
+    renderTrail();
+
     setTimeout(() => {
-      if (G.qIndex >= QUESTIONS_PER_LEVEL) {
-        levelComplete();
-      } else if (G.totalCorrect % TERRAIN_EVERY === 0) {
-        marchForward();
-      } else {
-        nextQuestion();
-      }
+      if (G.qIndex >= G.total) levelComplete();
+      else if (G.totalCorrect % TERRAIN_EVERY === 0) marchForward();
+      else nextQuestion();
     }, 1150);
   }
 
@@ -404,14 +469,26 @@
     G.mistakes++;
     el.hudStreak.textContent = 0;
 
+    if (G.mode === 'boss') {
+      G.hearts--;
+      renderHearts();
+      laughBoss();
+    }
+
     /* bé bị hất về vạch xuất phát */
     el.hero.classList.add('blast', 'dizzy');
     heroTo(HOME.x, HOME.y);
+
     setTimeout(() => {
       el.hero.classList.remove('blast');
       setTimeout(() => el.hero.classList.remove('dizzy'), 500);
+
+      if (G.mode === 'boss' && G.hearts <= 0) { bossLose(); return; }
+
       G.busy = false;
-      Sound.speak('Ối! Sai rồi. Bé quay lại vạch xuất phát và thử lại nhé.');
+      Sound.speak(G.mode === 'boss'
+        ? 'Ối! Bé mất một trái tim rồi. Cẩn thận nhé!'
+        : 'Ối! Sai rồi. Bé quay lại vạch xuất phát và thử lại nhé.');
     }, 900);
   }
 
@@ -440,7 +517,63 @@
   }
 
   /* ============================================================
-     ĐI TIẾP - ĐỔI ĐỊA HÌNH
+     SẾP BOM
+     ============================================================ */
+  function hitBoss() {
+    el.bossWrap.classList.remove('hurt');
+    void el.bossWrap.offsetWidth;
+    el.bossWrap.classList.add('hurt');
+    Sound.sparkle();
+    particles(50, 20, ['💥', '✨', '⚡'], 8, 110);
+    popText('-1 NGÒI!', 50, 26, 'boss-pop');
+  }
+
+  function laughBoss() {
+    el.bossWrap.classList.remove('laugh');
+    void el.bossWrap.offsetWidth;
+    el.bossWrap.classList.add('laugh');
+  }
+
+  function bossWin() {
+    G.screen = 'win';
+    G.busy = true;
+    const zone = Content.ZONES[G.zone - 1];
+
+    el.bossWrap.classList.add('defeated');
+    Sound.levelUp();
+    confetti();
+    particles(50, 24, ['💥', '🎉', '⭐', '✨'], 16, 200);
+
+    const stars = Math.max(1, G.hearts);
+    const nodeId = Content.nodeId(G.zone, Content.NODES_PER_ZONE);
+    Save.setNodeStars(nodeId, stars);
+    const sticker = Save.grantSticker(Content.BOSS_STICKERS[G.zone - 1]);
+    const nextZone = G.zone < Content.ZONES.length;
+
+    showWin({
+      title: `Hạ gục ${zone.boss.name}! 🏅`,
+      stars,
+      msg: nextZone
+        ? `Vùng mới đã mở: ${Content.ZONES[G.zone].icon} ${Content.ZONES[G.zone].name}!`
+        : 'Bé đã đi hết cả hành trình. Siêu chiến sĩ nhí! 🎖️',
+      sticker,
+      speak: `Tuyệt vời! Bé đã hạ gục ${zone.boss.name}!`
+    });
+  }
+
+  function bossLose() {
+    G.screen = 'lose';
+    G.busy = true;
+    stopWalk();
+    Sound.wrong();
+    const zone = Content.ZONES[G.zone - 1];
+    el.loseMsg.textContent = `${zone.boss.name} vẫn còn ngòi nổ. Bé nghỉ một chút rồi thử lại nhé!`;
+    el.loseScreen.hidden = false;
+    Sound.speak('Không sao đâu! Bé thử lại lần nữa nhé.');
+  }
+
+  /* ============================================================
+     ĐI TIẾP - ĐỔI CẢNH
      ============================================================ */
   function marchForward() {
     G.busy = true;
@@ -449,13 +582,18 @@
     startWalk();
     heroTo(118, HOME.y);
 
-    /* cảnh vật lùi lại phía sau */
     el.layerMid.style.transform = 'translateX(-30%)';
     el.layerFar.style.transform = 'translateX(-12%)';
 
     setTimeout(() => {
-      G.terrainIdx++;
-      applyTerrain(true);
+      /* Hành trình: đi sâu hơn vào cùng một vùng (cảnh vật đổi, địa hình giữ nguyên).
+         Chơi nhanh: sang hẳn địa hình mới. */
+      if (G.mode === 'free') {
+        G.terrainIdx++;
+        applyTerrain(true);
+      } else {
+        applyTerrain(false);
+      }
       el.layerMid.style.transform = '';
       el.layerFar.style.transform = '';
       heroJump(-18, HOME.y);
@@ -473,19 +611,19 @@
      VẬT PHẨM
      ============================================================ */
   function updateItems() {
-    el.cntHint.textContent = G.items.hint;
-    el.cntFifty.textContent = G.items.fifty;
-    el.cntShield.textContent = G.items.shield;
-    el.itemHint.classList.toggle('empty', G.items.hint <= 0);
-    el.itemFifty.classList.toggle('empty', G.items.fifty <= 0);
-    el.itemShield.classList.toggle('empty', G.items.shield <= 0 && !G.shieldOn);
+    const it = Save.data.items;
+    el.cntHint.textContent = it.hint;
+    el.cntFifty.textContent = it.fifty;
+    el.cntShield.textContent = it.shield;
+    el.itemHint.classList.toggle('empty', it.hint <= 0);
+    el.itemFifty.classList.toggle('empty', it.fifty <= 0);
+    el.itemShield.classList.toggle('empty', it.shield <= 0 && !G.shieldOn);
     el.itemShield.classList.toggle('on', G.shieldOn);
   }
 
   function giveRandomItem(silent) {
-    const keys = ['hint', 'fifty', 'shield'];
-    const k = keys[Math.floor(Math.random() * keys.length)];
-    G.items[k]++;
+    const k = pick(['hint', 'fifty', 'shield']);
+    Save.addItem(k, 1);
     updateItems();
     const btn = k === 'hint' ? el.itemHint : k === 'fifty' ? el.itemFifty : el.itemShield;
     btn.classList.remove('gain');
@@ -503,8 +641,8 @@
   }
 
   function useHint() {
-    if (G.busy || G.screen !== 'play' || G.items.hint <= 0 || !G.q) return;
-    G.items.hint--;
+    if (G.busy || G.screen !== 'play' || Save.data.items.hint <= 0 || !G.q) return;
+    Save.addItem('hint', -1);
     updateItems();
     Sound.item();
     el.hintText.textContent = G.q.hint;
@@ -513,10 +651,10 @@
   }
 
   function useFifty() {
-    if (G.busy || G.screen !== 'play' || G.items.fifty <= 0 || !G.q) return;
+    if (G.busy || G.screen !== 'play' || Save.data.items.fifty <= 0 || !G.q) return;
     const alive = G.mines.filter(m => !m.dead && m.index !== G.q.correct);
     if (alive.length < 2) { toast('Chỉ còn ít đáp án thôi, bé chọn thử nhé!'); return; }
-    G.items.fifty--;
+    Save.addItem('fifty', -1);
     updateItems();
     Sound.item();
 
@@ -535,16 +673,49 @@
   function useShield() {
     if (G.busy || G.screen !== 'play') return;
     if (G.shieldOn) { toast('💖 Trái tim đang bảo vệ bé rồi!'); return; }
-    if (G.items.shield <= 0) return;
-    G.items.shield--;
+    if (Save.data.items.shield <= 0) return;
+    Save.addItem('shield', -1);
     setShield(true);
     Sound.shield();
     toast('💖 Trái tim chống bom đã sẵn sàng!');
   }
 
   /* ============================================================
-     QUA CHẶNG
+     KẾT THÚC CHẶNG
      ============================================================ */
+  function showWin(opt) {
+    el.winTitle.textContent = opt.title;
+    el.winStars.innerHTML = [0, 1, 2]
+      .map(i => `<span class="${i < opt.stars ? '' : 'dim'}">⭐</span>`).join('');
+    el.winScore.textContent = G.levelScore;
+    el.winMsg.textContent = opt.msg;
+
+    if (opt.sticker) {
+      el.winSticker.hidden = false;
+      el.winSticker.innerHTML =
+        `<span class="ws-label">Sticker mới!</span>` +
+        `<span class="ws-emo">${opt.sticker.e}</span>` +
+        `<span class="ws-name">${opt.sticker.n}</span>`;
+    } else {
+      el.winSticker.hidden = true;
+    }
+
+    const gained = giveRandomItem(true);
+    el.winReward.textContent =
+      `+${opt.stars} ⭐   •   ${ITEM_INFO[gained].ico} ${ITEM_INFO[gained].name} +1`;
+
+    if (G.score > Save.data.best) {
+      Save.set('best', G.score);
+      setTimeout(() => toast('🏆 Kỷ lục mới của bé!'), 500);
+    }
+
+    el.btnNext.textContent = G.mode === 'free' ? '➡️ ĐI TIẾP' : '🗺️ BẢN ĐỒ';
+    el.btnHome.textContent = G.mode === 'free' ? '🏠 Về nhà' : '🔁 Chơi lại chặng này';
+
+    el.winScreen.hidden = false;
+    Sound.speak(opt.speak);
+  }
+
   function levelComplete() {
     G.screen = 'win';
     G.busy = true;
@@ -553,29 +724,128 @@
     el.hero.classList.add('cheer');
 
     const stars = G.mistakes === 0 ? 3 : G.mistakes <= 2 ? 2 : 1;
-    el.winStars.innerHTML = [0, 1, 2]
-      .map(i => `<span class="${i < stars ? '' : 'dim'}">⭐</span>`).join('');
-    el.winTitle.textContent = stars === 3 ? 'Hoàn hảo, chiến sĩ nhí! 🏅' : 'Hoan hô chiến sĩ nhí! 🎉';
-    el.winScore.textContent = G.levelScore;
-    el.winMsg.textContent = stars === 3
-      ? 'Bé vượt bãi mìn mà không sai câu nào!'
-      : `Bé đã vượt qua chặng ${G.level} an toàn!`;
+    let sticker = null;
 
-    const gained = giveRandomItem(true);
-    el.winReward.textContent = `Phần thưởng: ${ITEM_INFO[gained].ico} ${ITEM_INFO[gained].name} +1`;
-
-    const best = store.get('best', 0);
-    if (G.score > best) {
-      store.set('best', G.score);
-      setTimeout(() => toast('🏆 Kỷ lục mới của bé!'), 500);
+    if (G.mode === 'journey') {
+      Save.setNodeStars(Content.nodeId(G.zone, G.node), stars);
+      sticker = Save.grantSticker();
+    } else {
+      Save.addStars(1);
+      if (G.level % 2 === 0) sticker = Save.grantSticker();
     }
 
-    el.winScreen.hidden = false;
-    Sound.speak(`Chúc mừng! Bé đã vượt qua chặng ${G.level}. Bé được ${stars} ngôi sao.`);
+    showWin({
+      title: stars === 3 ? 'Hoàn hảo, chiến sĩ nhí! 🏅' : 'Hoan hô chiến sĩ nhí! 🎉',
+      stars,
+      msg: stars === 3
+        ? 'Bé vượt bãi mìn mà không sai câu nào!'
+        : 'Bé đã vượt qua chặng này an toàn!',
+      sticker,
+      speak: `Chúc mừng! Bé được ${stars} ngôi sao.`
+    });
   }
 
-  function nextLevel() {
+  /* ============================================================
+     BẮT ĐẦU CÁC CHẾ ĐỘ
+     ============================================================ */
+  function resetRun() {
+    G.qIndex = 0;
+    G.levelScore = 0;
+    G.streak = 0;
+    G.mistakes = 0;
+    G.totalCorrect = 0;
+    G.hearts = 3;
+    setShield(false);
+    el.hero.classList.remove('cheer', 'blast', 'dizzy');
+    el.bossWrap.classList.remove('hurt', 'laugh', 'defeated');
+    el.hudStreak.textContent = 0;
+    el.hudScore.textContent = G.score;
+    updateItems();
+    refreshHero();
+    document.body.dataset.playing = '1';
+    if (global.PWA) PWA.keepAwake(true);
+    Sound.resume();
+    if (Sound.musicOn) Sound.startMusic();
+  }
+
+  function enterStage() {
+    el.menu.hidden = true;
+    el.quickPlay.hidden = true;
+    el.winScreen.hidden = true;
+    el.loseScreen.hidden = true;
+    Journey.close();
+    G.screen = 'play';
+    heroJump(HOME.x, HOME.y);
+  }
+
+  /* --- Hành trình --- */
+  function startNode(zoneIdx, nodeIdx) {
+    const zone = Content.ZONES[zoneIdx - 1];
+    const isBoss = nodeIdx === Content.NODES_PER_ZONE;
+
+    G.zone = zoneIdx;
+    G.node = nodeIdx;
+    G.mode = isBoss ? 'boss' : 'journey';
+    G.topicPool = zone.topics.slice();
+    G.diff = zone.diff;
+    G.score = 0;
+    G.terrainIdx = zoneIdx - 1;
+    G.total = Content.QUESTIONS_PER_NODE;
+    G.bossMax = isBoss ? zone.boss.hp : 0;
+    G.bossHp = G.bossMax;
+
+    resetRun();
+    enterStage();
+    applyTerrain(true);
+
+    el.hudLevel.textContent = `${zoneIdx}-${nodeIdx}`;
+    el.stage.classList.toggle('boss-mode', isBoss);
+    el.hud.classList.toggle('boss-hud', isBoss);
+    el.bossWrap.hidden = !isBoss;
+    if (isBoss) {
+      el.bossArt.innerHTML = Sprites.boss(zone);
+      el.bossName.textContent = zone.boss.name;
+    }
+
+    renderHearts();
+    renderTrail();
+    nextQuestion();
+
+    Sound.speak(isBoss
+      ? `Cẩn thận! ${zone.boss.name} xuất hiện. Bé cắt hết ngòi nổ nhé!`
+      : `Chặng ${nodeIdx}, ${zone.name}. Cùng dò mìn nào!`);
+
+    firstTimeTip();
+  }
+
+  /* --- Chơi nhanh --- */
+  function startFree() {
+    G.mode = 'free';
+    G.topicPool = [Save.data.topic];
+    G.diff = Save.data.diff;
+    G.level = 1;
+    G.score = 0;
+    G.terrainIdx = 0;
+    G.total = Content.QUESTIONS_PER_NODE;
+
+    resetRun();
+    enterStage();
+    applyTerrain(true);
+
+    el.hudLevel.textContent = 1;
+    el.stage.classList.remove('boss-mode');
+    el.hud.classList.remove('boss-hud');
+    el.bossWrap.hidden = true;
+    renderHearts();
+    renderTrail();
+    nextQuestion();
+    Sound.speak('Chiến sĩ nhí ơi, cùng dò mìn nào!');
+    firstTimeTip();
+  }
+
+  function nextFreeLevel() {
     G.level++;
+    G.diff = Math.min(3, Save.data.diff + Math.floor((G.level - 1) / 3));
     G.qIndex = 0;
     G.levelScore = 0;
     G.mistakes = 0;
@@ -590,84 +860,70 @@
     nextQuestion();
   }
 
-  /* ============================================================
-     BẮT ĐẦU / KẾT THÚC
-     ============================================================ */
-  function startGame() {
-    G.screen = 'play';
-    G.level = 1;
-    G.qIndex = 0;
-    G.score = 0;
-    G.levelScore = 0;
-    G.streak = 0;
-    G.mistakes = 0;
-    G.totalCorrect = 0;
-    G.terrainIdx = 0;
-    G.items = { hint: 1, fifty: 1, shield: 1 };
-    setShield(false);
-
-    el.hudLevel.textContent = 1;
-    el.hudScore.textContent = 0;
-    el.hudStreak.textContent = 0;
-    el.hero.classList.remove('cheer', 'blast', 'dizzy');
-    updateItems();
-    applyTerrain(true);
-    heroJump(HOME.x, HOME.y);
-    el.menu.hidden = true;
-    el.winScreen.hidden = true;
-
-    Sound.resume();
-    if (Sound.musicOn) Sound.startMusic();
-
-    document.body.dataset.playing = '1';
-    if (global.PWA) PWA.keepAwake(true);
-
-    renderTrail();
-    nextQuestion();
-    Sound.speak('Chiến sĩ nhí ơi, cùng dò mìn nào!');
-
-    if (!store.get('tutorialShown', false)) {
-      store.set('tutorialShown', true);
-      setTimeout(() => toast('👉 Chạm vào bông hoa có đáp án đúng nhé!'), 1400);
-    }
+  function firstTimeTip() {
+    if (Save.data.tutorial) return;
+    Save.set('tutorial', true);
+    setTimeout(() => toast('👉 Chạm vào bông hoa có đáp án đúng nhé!'), 1400);
   }
 
-  function goHome() {
+  /* ============================================================
+     ĐIỀU HƯỚNG MÀN HÌNH
+     ============================================================ */
+  function goMenu() {
     G.screen = 'menu';
     G.busy = true;
     stopWalk();
     Sound.shutUp();
     el.winScreen.hidden = true;
+    el.loseScreen.hidden = true;
     el.pauseScreen.hidden = true;
+    el.quickPlay.hidden = true;
+    Journey.close();
     el.menu.hidden = false;
     el.field.innerHTML = '';
     el.hero.classList.remove('cheer', 'blast', 'dizzy');
     setShield(false);
-    showBest();
     document.body.dataset.playing = '0';
     if (global.PWA) PWA.keepAwake(false);
+    refreshMenu();
   }
 
-  function showBest() {
-    const best = store.get('best', 0);
-    el.bestScore.textContent = best > 0 ? `🏆 Điểm cao nhất: ${best}` : '';
+  function goMap() {
+    G.screen = 'map';
+    G.busy = true;
+    stopWalk();
+    Sound.shutUp();
+    el.winScreen.hidden = true;
+    el.loseScreen.hidden = true;
+    el.pauseScreen.hidden = true;
+    el.menu.hidden = true;
+    el.field.innerHTML = '';
+    document.body.dataset.playing = '0';
+    if (global.PWA) PWA.keepAwake(false);
+    Journey.open(true);
+  }
+
+  function refreshMenu() {
+    el.menuHero.innerHTML = Sprites.hero(Save.outfit());
+    const pet = Content.pet(Save.data.equipped.pet);
+    el.menuPet.textContent = pet.emoji || '';
+    el.menuPet.hidden = !pet.emoji;
+    el.menuStars.textContent = Save.data.stars;
+    el.bestScore.textContent = Save.data.best > 0 ? `🏆 Điểm cao nhất: ${Save.data.best}` : '';
   }
 
   /* ============================================================
-     MENU
+     MENU CHƠI NHANH
      ============================================================ */
-  function buildMenu() {
-    el.menuHero.innerHTML = Sprites.hero();
-
+  function buildQuickPlay() {
     el.topics.innerHTML = '';
     Questions.TOPICS.forEach(t => {
       const b = document.createElement('button');
-      b.className = 'topic-btn' + (t.key === G.topic ? ' is-on' : '');
+      b.className = 'topic-btn' + (t.key === Save.data.topic ? ' is-on' : '');
       b.dataset.key = t.key;
       b.innerHTML = `<span>${t.icon}</span><span>${t.name}</span>`;
       b.addEventListener('click', () => {
-        G.topic = t.key;
-        store.set('topic', t.key);
+        Save.set('topic', t.key);
         [...el.topics.children].forEach(c => c.classList.toggle('is-on', c === b));
         Sound.resume(); Sound.click();
       });
@@ -675,10 +931,9 @@
     });
 
     [...el.levels.children].forEach(b => {
-      b.classList.toggle('is-on', +b.dataset.diff === G.baseDiff);
+      b.classList.toggle('is-on', +b.dataset.diff === Save.data.diff);
       b.addEventListener('click', () => {
-        G.baseDiff = +b.dataset.diff;
-        store.set('diff', G.baseDiff);
+        Save.set('diff', +b.dataset.diff);
         [...el.levels.children].forEach(c => c.classList.toggle('is-on', c === b));
         Sound.resume(); Sound.click();
       });
@@ -694,32 +949,43 @@
   }
 
   function bind() {
-    el.btnStart.addEventListener('click', () => {
+    /* --- menu --- */
+    el.btnJourney.addEventListener('click', () => { Sound.resume(); Sound.click(); goMap(); });
+    el.btnQuick.addEventListener('click', () => {
       Sound.resume(); Sound.click();
-      startGame();
+      el.quickPlay.hidden = false;
     });
+    el.btnQuickBack.addEventListener('click', () => { Sound.click(); el.quickPlay.hidden = true; });
+    el.btnStart.addEventListener('click', () => { Sound.resume(); Sound.click(); startFree(); });
 
+    el.btnWardrobeMenu.addEventListener('click', () => { Sound.resume(); Sound.click(); Wardrobe.open(); });
+    el.btnAlbumMenu.addEventListener('click', () => { Sound.resume(); Sound.click(); Album.open(); });
+    el.btnWardrobeMap.addEventListener('click', () => { Sound.click(); Wardrobe.open(); });
+    el.btnAlbumMap.addEventListener('click', () => { Sound.click(); Album.open(); });
+
+    /* --- vật phẩm --- */
     el.itemHint.addEventListener('click', useHint);
     el.itemFifty.addEventListener('click', useFifty);
     el.itemShield.addEventListener('click', useShield);
-
     el.btnSpeak.addEventListener('click', () => { Sound.resume(); speakQuestion(); });
 
+    /* --- âm thanh --- */
     el.btnMusic.addEventListener('click', () => {
       Sound.resume();
       Sound.toggleMusic(!Sound.musicOn);
-      store.set('music', Sound.musicOn);
+      Save.set('music', Sound.musicOn);
       syncSoundButtons();
     });
 
     el.btnVoice.addEventListener('click', () => {
       Sound.voiceOn = !Sound.voiceOn;
       if (!Sound.voiceOn) Sound.shutUp();
-      store.set('voice', Sound.voiceOn);
+      Save.set('voice', Sound.voiceOn);
       syncSoundButtons();
       Sound.click();
     });
 
+    /* --- tạm dừng --- */
     el.btnPause.addEventListener('click', () => {
       if (G.screen !== 'play') return;
       G.screen = 'pause';
@@ -739,22 +1005,39 @@
       if (global.PWA) PWA.keepAwake(true);
     });
 
+    el.btnQuit.addEventListener('click', () => {
+      Sound.click();
+      if (G.mode === 'free') goMenu(); else goMap();
+    });
+
+    /* --- kết thúc chặng --- */
+    el.btnNext.addEventListener('click', () => {
+      Sound.click();
+      if (G.mode === 'free') nextFreeLevel();
+      else goMap();
+    });
+
+    el.btnHome.addEventListener('click', () => {
+      Sound.click();
+      if (G.mode === 'free') goMenu();
+      else startNode(G.zone, G.node);
+    });
+
+    /* --- thua trận boss --- */
+    el.btnRetry.addEventListener('click', () => { Sound.click(); startNode(G.zone, G.node); });
+    el.btnLoseMap.addEventListener('click', () => { Sound.click(); goMap(); });
+
+    /* --- web app --- */
     el.btnInstall.addEventListener('click', async () => {
       Sound.click();
       const ok = await PWA.install();
       if (ok) toast('🎉 Đã cài game vào máy của bé!');
       el.btnInstall.hidden = true;
     });
-
     el.btnFull.addEventListener('click', () => { Sound.click(); PWA.toggleFullscreen(); });
-
     global.addEventListener('beforeinstallprompt', () => { el.btnInstall.hidden = false; });
 
-    el.btnQuit.addEventListener('click', goHome);
-    el.btnHome.addEventListener('click', goHome);
-    el.btnNext.addEventListener('click', () => { Sound.click(); nextLevel(); });
-
-    /* bàn phím: 1-4 chọn đáp án */
+    /* --- bàn phím --- */
     document.addEventListener('keydown', e => {
       if (G.screen !== 'play') return;
       const n = ['1', '2', '3', '4'].indexOf(e.key);
@@ -764,59 +1047,12 @@
       if (e.key === 's') useShield();
     });
 
-    /* tạm dừng nhạc khi rời khỏi trang */
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { Sound.stopMusic(); Sound.shutUp(); }
       else if (Sound.musicOn && G.screen === 'play') Sound.startMusic();
     });
-  }
 
-  /* ---------- các nút riêng của bản web app ---------- */
-  function setupAppButtons() {
-    const P = global.PWA;
-    if (!P) return;
-    if (P.installEvent) el.btnInstall.hidden = false;
-    if (P.fullscreenSupported && !P.standalone) el.btnFull.hidden = false;
-    if (P.isIOS && !P.standalone) el.iosTip.hidden = false;
-  }
-
-  /* ---------- ẩn màn hình chờ khi font + đồ họa đã sẵn sàng ---------- */
-  function hideSplash() {
-    const done = () => {
-      el.splash.classList.add('hide');
-      setTimeout(() => { el.splash.hidden = true; }, 500);
-    };
-    const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    let called = false;
-    const once = () => { if (!called) { called = true; done(); } };
-    fonts.then(() => setTimeout(once, 120));
-    setTimeout(once, 2500); /* mạng chậm cũng không bắt bé chờ quá lâu */
-  }
-
-  /* ============================================================
-     KHỞI ĐỘNG
-     ============================================================ */
-  function init() {
-    IDS.forEach(id => { el[id] = $(id); });
-
-    el.heroInner.innerHTML = Sprites.hero();
-
-    G.topic = store.get('topic', 'mix');
-    G.baseDiff = store.get('diff', 1);
-    Sound.musicOn = store.get('music', true);
-    Sound.voiceOn = store.get('voice', true);
-
-    buildMenu();
-    bind();
-    syncSoundButtons();
-    showBest();
-    applyTerrain(false);
-    renderTrail();
-    heroJump(HOME.x, HOME.y);
-    setupAppButtons();
-    hideSplash();
-
-    /* xoay ngang/dọc: xếp lại vị trí hoa và đưa nhân vật về đúng chỗ */
+    /* --- xoay ngang/dọc --- */
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
@@ -829,6 +1065,59 @@
         }
       }, 220);
     });
+  }
+
+  /* ---------- các nút riêng của bản web app ---------- */
+  function setupAppButtons() {
+    const P = global.PWA;
+    if (!P) return;
+    if (P.installEvent) el.btnInstall.hidden = false;
+    if (P.fullscreenSupported && !P.standalone) el.btnFull.hidden = false;
+    if (P.isIOS && !P.standalone) el.iosTip.hidden = false;
+  }
+
+  function hideSplash() {
+    const done = () => {
+      el.splash.classList.add('hide');
+      setTimeout(() => { el.splash.hidden = true; }, 500);
+    };
+    const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    let called = false;
+    const once = () => { if (!called) { called = true; done(); } };
+    fonts.then(() => setTimeout(once, 120));
+    setTimeout(once, 2500);
+  }
+
+  /* ============================================================
+     KHỞI ĐỘNG
+     ============================================================ */
+  function init() {
+    IDS.forEach(id => { el[id] = $(id); });
+
+    Save.load();
+    Sound.musicOn = Save.data.music;
+    Sound.voiceOn = Save.data.voice;
+
+    refreshHero();
+
+    Journey.init();
+    Journey.onPick = (z, n) => startNode(z, n);
+    Journey.onHome = goMenu;
+
+    Wardrobe.init();
+    Wardrobe.onClose = () => { refreshHero(); refreshMenu(); Journey.render(false); };
+    Album.init();
+    Album.onClose = () => { refreshMenu(); };
+
+    buildQuickPlay();
+    bind();
+    syncSoundButtons();
+    refreshMenu();
+    applyTerrain(false);
+    renderTrail();
+    heroJump(HOME.x, HOME.y);
+    setupAppButtons();
+    hideSplash();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

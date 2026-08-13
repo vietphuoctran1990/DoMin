@@ -3,16 +3,20 @@
    Cho phép bé chơi được cả khi không có mạng (offline).
    Đổi CACHE_VERSION mỗi lần cập nhật game.
    ============================================================ */
-const CACHE_VERSION = 'domin-v1';
+const CACHE_VERSION = 'domin-v2';
 
 const ASSETS = [
   './',
   './index.html',
   './css/fonts.css',
   './css/style.css',
+  './js/content.js',
+  './js/save.js',
   './js/questions.js',
   './js/audio.js',
   './js/sprites.js',
+  './js/map.js',
+  './js/collection.js',
   './js/game.js',
   './js/pwa.js',
   './fonts/baloo2-vietnamese.woff2',
