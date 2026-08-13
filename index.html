@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#7ed957">
+<meta name="description" content="Chiến Sĩ Dò Mìn - game trả lời câu hỏi vui nhộn cho bé 6 tuổi">
+<title>Chiến Sĩ Dò Mìn</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ THANH THÔNG TIN ============ -->
+  <header class="hud" id="hud">
+    <div class="hud-left">
+      <div class="chip chip-level"><span class="chip-ico">🎖️</span><span id="hudLevel">1</span></div>
+      <div class="chip chip-score"><span class="chip-ico">⭐</span><span id="hudScore">0</span></div>
+      <div class="chip chip-streak" id="hudStreakChip"><span class="chip-ico">🔥</span><span id="hudStreak">0</span></div>
+    </div>
+
+    <div class="hud-progress" aria-label="Tiến trình chặng">
+      <div class="trail" id="trail"></div>
+    </div>
+
+    <div class="hud-right">
+      <button class="icon-btn" id="btnMusic" title="Bật/tắt nhạc" aria-label="Bật tắt nhạc">🎵</button>
+      <button class="icon-btn" id="btnVoice" title="Bật/tắt đọc câu hỏi" aria-label="Bật tắt giọng đọc">🗣️</button>
+      <button class="icon-btn" id="btnPause" title="Tạm dừng" aria-label="Tạm dừng">⏸️</button>
+    </div>
+  </header>
+
+  <!-- ============ THẺ CÂU HỎI ============ -->
+  <section class="question-card" id="questionCard">
+    <div class="q-badge" id="qBadge">Phép tính</div>
+    <div class="q-body">
+      <p class="q-text" id="qText">Sẵn sàng chưa nào?</p>
+      <div class="q-visual" id="qVisual"></div>
+    </div>
+    <button class="speak-btn" id="btnSpeak" title="Nghe lại câu hỏi" aria-label="Nghe lại câu hỏi">🔊</button>
+    <div class="hint-bubble" id="hintBubble" hidden>
+      <span class="hint-ico">🔍</span><span id="hintText"></span>
+    </div>
+  </section>
+
+  <!-- ============ SÂN CHƠI ============ -->
+  <main class="stage" id="stage" data-terrain="meadow">
+    <div class="sky"></div>
+    <div class="sun"></div>
+    <div class="layer layer-far" id="layerFar"></div>
+    <div class="layer layer-mid" id="layerMid"></div>
+    <div class="ground"></div>
+    <div class="ground-deco" id="groundDeco"></div>
+
+    <div class="field" id="field"></div>
+
+    <div class="hero" id="hero">
+      <div class="hero-inner" id="heroInner"></div>
+      <div class="shield-aura" id="shieldAura" hidden>💖</div>
+    </div>
+
+    <div class="fx" id="fx"></div>
+    <div class="terrain-name" id="terrainName"></div>
+  </main>
+
+  <!-- ============ TÚI ĐỒ ============ -->
+  <footer class="items" id="items">
+    <button class="item-btn" id="itemHint" data-item="hint">
+      <span class="item-ico">🔍</span>
+      <span class="item-name">Kính lúp</span>
+      <span class="item-count" id="cntHint">1</span>
+    </button>
+    <button class="item-btn" id="itemFifty" data-item="fifty">
+      <span class="item-ico">✂️</span>
+      <span class="item-name">50 : 50</span>
+      <span class="item-count" id="cntFifty">1</span>
+    </button>
+    <button class="item-btn" id="itemShield" data-item="shield">
+      <span class="item-ico">💖</span>
+      <span class="item-name">Tim chống bom</span>
+      <span class="item-count" id="cntShield">1</span>
+    </button>
+  </footer>
+
+  <!-- ============ MÀN HÌNH CHÍNH ============ -->
+  <div class="overlay overlay-menu" id="menu">
+    <div class="menu-sky"></div>
+    <div class="menu-card">
+      <div class="menu-hero" id="menuHero"></div>
+      <h1 class="title">
+        <span class="title-l">Chiến Sĩ</span>
+        <span class="title-b">DÒ MÌN</span>
+      </h1>
+      <p class="subtitle">Trả lời đúng để bước qua bãi hoa mìn nhé! 🌸</p>
+
+      <p class="menu-label">Bé chọn chủ đề nào?</p>
+      <div class="topics" id="topics"></div>
+
+      <p class="menu-label">Độ khó</p>
+      <div class="levels" id="levels">
+        <button class="lvl-btn is-on" data-diff="1">🐣 Dễ</button>
+        <button class="lvl-btn" data-diff="2">🐤 Vừa</button>
+        <button class="lvl-btn" data-diff="3">🦅 Giỏi</button>
+      </div>
+
+      <button class="big-btn" id="btnStart">▶️ BẮT ĐẦU</button>
+      <p class="best-score" id="bestScore"></p>
+    </div>
+  </div>
+
+  <!-- ============ QUA CHẶNG ============ -->
+  <div class="overlay overlay-win" id="winScreen" hidden>
+    <div class="win-card">
+      <div class="win-flag">🚩</div>
+      <h2 id="winTitle">Hoan hô chiến sĩ nhí!</h2>
+      <div class="stars" id="winStars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <p class="win-line">Điểm chặng này: <b id="winScore">0</b></p>
+      <p class="win-line" id="winMsg">Bé đã vượt qua bãi mìn an toàn!</p>
+      <div class="win-reward" id="winReward"></div>
+      <div class="win-btns">
+        <button class="big-btn" id="btnNext">➡️ ĐI TIẾP</button>
+        <button class="ghost-btn" id="btnHome">🏠 Về nhà</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TẠM DỪNG ============ -->
+  <div class="overlay overlay-pause" id="pauseScreen" hidden>
+    <div class="pause-card">
+      <h2>⏸️ Nghỉ một chút nhé</h2>
+      <div class="pause-btns">
+        <button class="big-btn" id="btnResume">▶️ Chơi tiếp</button>
+        <button class="ghost-btn" id="btnQuit">🏠 Về nhà</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THÔNG BÁO NHỎ ============ -->
+  <div class="toast-wrap" id="toastWrap"></div>
+
+</div>
+
+<script src="js/questions.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
