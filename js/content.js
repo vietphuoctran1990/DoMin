@@ -52,7 +52,7 @@
     hearts: 3,
     terrainEvery: 4,        /* cứ 4 câu đúng lại sang cảnh mới */
     diffUpEvery: 6,         /* cứ 6 câu đúng lại khó hơn một bậc */
-    starEvery: 5,           /* cứ đi được 5 chặng thì thưởng 1 sao */
+    starEvery: 4,           /* cứ đi được 4 chặng thì thưởng 1 sao */
     intro: 'Đi được càng xa càng giỏi! Sai 3 lần là phải quay về nhé.'
   };
 
@@ -67,40 +67,40 @@
      ============================================================ */
   const CAPS = [
     { id: 'cap_army', name: 'Mũ bộ đội', icon: '🪖', price: 0 },
-    { id: 'cap_taibeo', name: 'Mũ tai bèo', icon: '👒', price: 8 },
-    { id: 'cap_party', name: 'Mũ sinh nhật', icon: '🎉', price: 14 },
-    { id: 'cap_space', name: 'Mũ phi hành gia', icon: '🧑‍🚀', price: 22 },
-    { id: 'cap_crown', name: 'Vương miện', icon: '👑', price: 30 }
+    { id: 'cap_taibeo', name: 'Mũ tai bèo', icon: '👒', price: 4 },
+    { id: 'cap_party', name: 'Mũ sinh nhật', icon: '🎉', price: 7 },
+    { id: 'cap_space', name: 'Mũ phi hành gia', icon: '🧑‍🚀', price: 12 },
+    { id: 'cap_crown', name: 'Vương miện', icon: '👑', price: 16 }
   ];
 
   const UNIFORMS = [
     { id: 'uni_green', name: 'Xanh bộ đội', icon: '🟩', price: 0,
       c1: '#8cc16a', c2: '#5d8f42', c3: '#a8d98a', c4: '#4e7a35', arm: '#7fb85e', leg: '#4c7a37' },
-    { id: 'uni_blue', name: 'Xanh hải quân', icon: '🟦', price: 10,
+    { id: 'uni_blue', name: 'Xanh hải quân', icon: '🟦', price: 5,
       c1: '#7ec4f5', c2: '#3d7fbf', c3: '#b3e0ff', c4: '#356fa8', arm: '#6fb6ee', leg: '#33689e' },
-    { id: 'uni_sand', name: 'Cam sa mạc', icon: '🟧', price: 10,
+    { id: 'uni_sand', name: 'Cam sa mạc', icon: '🟧', price: 5,
       c1: '#ffc47a', c2: '#e08a3c', c3: '#ffe0b3', c4: '#c9762f', arm: '#ffb765', leg: '#c06f2c' },
-    { id: 'uni_pink', name: 'Hồng kẹo ngọt', icon: '🩷', price: 18,
+    { id: 'uni_pink', name: 'Hồng kẹo ngọt', icon: '🩷', price: 9,
       c1: '#ffb0cd', c2: '#f2739f', c3: '#ffd6e6', c4: '#dd5b89', arm: '#ffa3c4', leg: '#d9527f' },
-    { id: 'uni_purple', name: 'Tím vũ trụ', icon: '🟪', price: 24,
+    { id: 'uni_purple', name: 'Tím vũ trụ', icon: '🟪', price: 12,
       c1: '#c9a7ff', c2: '#8b5cf6', c3: '#e2d3ff', c4: '#7c4ded', arm: '#bd97ff', leg: '#6d3fd6' }
   ];
 
   const ACCESSORIES = [
     { id: 'acc_none', name: 'Không đeo', icon: '🚫', price: 0 },
-    { id: 'acc_scarf', name: 'Khăn quàng đỏ', icon: '🧣', price: 6 },
-    { id: 'acc_backpack', name: 'Ba lô', icon: '🎒', price: 12 },
-    { id: 'acc_glasses', name: 'Kính râm', icon: '🕶️', price: 16 },
-    { id: 'acc_wings', name: 'Đôi cánh', icon: '🪽', price: 28 }
+    { id: 'acc_scarf', name: 'Khăn quàng đỏ', icon: '🧣', price: 3 },
+    { id: 'acc_backpack', name: 'Ba lô', icon: '🎒', price: 6 },
+    { id: 'acc_glasses', name: 'Kính râm', icon: '🕶️', price: 9 },
+    { id: 'acc_wings', name: 'Đôi cánh', icon: '🪽', price: 14 }
   ];
 
   const PETS = [
     { id: 'pet_none', name: 'Chưa có bạn', icon: '🚫', price: 0, emoji: '' },
-    { id: 'pet_dog', name: 'Cún Mực', icon: '🐶', price: 12, emoji: '🐶' },
-    { id: 'pet_cat', name: 'Mèo Mun', icon: '🐱', price: 12, emoji: '🐱' },
-    { id: 'pet_chick', name: 'Gà Bông', icon: '🐥', price: 16, emoji: '🐥' },
-    { id: 'pet_penguin', name: 'Cánh Cụt', icon: '🐧', price: 20, emoji: '🐧' },
-    { id: 'pet_robot', name: 'Rô Bốt', icon: '🤖', price: 26, emoji: '🤖' }
+    { id: 'pet_dog', name: 'Cún Mực', icon: '🐶', price: 6, emoji: '🐶' },
+    { id: 'pet_cat', name: 'Mèo Mun', icon: '🐱', price: 6, emoji: '🐱' },
+    { id: 'pet_chick', name: 'Gà Bông', icon: '🐥', price: 8, emoji: '🐥' },
+    { id: 'pet_penguin', name: 'Cánh Cụt', icon: '🐧', price: 10, emoji: '🐧' },
+    { id: 'pet_robot', name: 'Rô Bốt', icon: '🤖', price: 13, emoji: '🤖' }
   ];
 
   const SLOTS = [

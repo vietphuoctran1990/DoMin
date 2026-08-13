@@ -23,8 +23,8 @@
   ];
   /* Đánh Sếp Bom: chừa chỗ phía trên cho trùm cuối (bom + tên + thanh ngòi nổ) */
   const SPOTS_BOSS_TALL = [
-    { x: 19, y: 52 }, { x: 78, y: 49 },
-    { x: 22, y: 74 }, { x: 75, y: 75 }
+    { x: 19, y: 48 }, { x: 78, y: 45 },
+    { x: 22, y: 77 }, { x: 75, y: 78 }
   ];
   /* Sân ngang mà đánh trùm: Sếp Bom đứng nép sang trái (xem .wide-layout trong CSS),
      hoa mìn dồn sang phải để không ai che ai. */
@@ -86,6 +86,7 @@
     firstTry: true,
     wrongThisQ: 0,     /* sai mấy lần ở câu đang hỏi -> sai 2 lần thì chỉ bé cách làm */
     isReview: false,   /* câu này là câu ôn lại */
+    lastReview: '',    /* câu vừa ôn, để không cho lặp lại ngay */
     stepTimer: null,
     blinkTimer: null
   };
@@ -395,18 +396,23 @@
     Sound.speak(G.q.speak || G.q.prompt);
   }
 
-  /* Cứ khoảng 1/3 số câu, cho bé gặp lại một câu từng làm sai.
-     Đáp án được xếp lại vị trí để bé phải nghĩ chứ không nhớ chỗ. */
+  /* Thỉnh thoảng cho bé gặp lại một câu từng làm sai.
+     Tỉ lệ tăng dần theo số câu trong sổ: sổ chỉ có 1 câu mà lấy tỉ lệ cao
+     thì bé gặp đi gặp lại đúng câu đó, phát chán. Đáp án cũng được xếp lại
+     vị trí để bé phải nghĩ chứ không nhớ chỗ. */
   function pickQuestion() {
-    const missed = Save.data.missed;
-    if (missed.length && Math.random() < 0.32) {
-      const found = Save.takeMissed(G.topicPool);
+    const n = Save.data.missed.length;
+    const chance = Math.min(0.3, 0.08 + 0.06 * n);
+
+    if (n && Math.random() < chance) {
+      const found = Save.takeMissed(G.topicPool, G.lastReview);
       if (found) {
         const q = JSON.parse(JSON.stringify(found.q));
         const rightLabel = q.answers[q.correct].label;
         q.answers = Questions.shuffle(q.answers);
         q.correct = q.answers.findIndex(a => a.label === rightLabel);
         G.isReview = true;
+        G.lastReview = q.prompt;
         return q;
       }
     }
@@ -498,7 +504,7 @@
       setTimeout(() => {
         if (G.distance % Content.ENDLESS.terrainEvery === 0) marchForward();
         else nextQuestion();
-      }, 1150);
+      }, 950);
       return;
     }
 
@@ -509,7 +515,7 @@
       setTimeout(() => {
         if (G.bossHp <= 0) bossWin();
         else nextQuestion();
-      }, 1200);
+      }, 1000);
       return;
     }
 
@@ -520,7 +526,7 @@
       if (G.qIndex >= G.total) levelComplete();
       else if (G.totalCorrect % TERRAIN_EVERY === 0) marchForward();
       else nextQuestion();
-    }, 1150);
+    }, 950);
   }
 
   const PRAISES = ['GIỎI QUÁ!', 'CHÍNH XÁC!', 'TUYỆT VỜI!', 'XUẤT SẮC!', 'HOAN HÔ!'];
@@ -651,13 +657,13 @@
 
     const stars = Math.max(1, G.hearts);
     const nodeId = Content.nodeId(G.zone, Content.NODES_PER_ZONE);
-    Save.setNodeStars(nodeId, stars);
+    const starsGot = Save.setNodeStars(nodeId, stars);
     const sticker = Save.grantSticker(Content.BOSS_STICKERS[G.zone - 1]);
     const nextZone = G.zone < Content.ZONES.length;
 
     showWin({
       title: `Hạ gục ${zone.boss.name}! 🏅`,
-      stars,
+      stars, starsGot,
       msg: nextZone
         ? `Vùng mới đã mở: ${Content.ZONES[G.zone].icon} ${Content.ZONES[G.zone].name}!`
         : 'Bé đã đi hết cả hành trình. Siêu chiến sĩ nhí! 🎖️',
@@ -754,6 +760,7 @@
     updateItems();
     Sound.item();
     el.hintText.textContent = G.q.hint;
+    el.teachBubble.hidden = true;   /* chỉ hiện một bong bóng, kẻo thẻ câu hỏi phình to */
     el.hintBubble.hidden = false;
     Sound.speak(Questions.plain(G.q.hint));
   }
@@ -809,8 +816,9 @@
     }
 
     const gained = giveRandomItem(true);
+    const starsGot = opt.starsGot === undefined ? opt.stars : opt.starsGot;
     el.winReward.textContent =
-      `+${opt.stars} ⭐   •   ${ITEM_INFO[gained].ico} ${ITEM_INFO[gained].name} +1`;
+      `+${starsGot} ⭐   •   ${ITEM_INFO[gained].ico} ${ITEM_INFO[gained].name} +1`;
 
     if (G.score > Save.data.best) {
       Save.set('best', G.score);
@@ -833,18 +841,20 @@
 
     const stars = G.mistakes === 0 ? 3 : G.mistakes <= 2 ? 2 : 1;
     let sticker = null;
+    let starsGot;
 
     if (G.mode === 'journey') {
-      Save.setNodeStars(Content.nodeId(G.zone, G.node), stars);
+      starsGot = Save.setNodeStars(Content.nodeId(G.zone, G.node), stars);
       sticker = Save.grantSticker();
     } else {
+      starsGot = 1;
       Save.addStars(1);
       if (G.level % 2 === 0) sticker = Save.grantSticker();
     }
 
     showWin({
       title: stars === 3 ? 'Hoàn hảo, chiến sĩ nhí! 🏅' : 'Hoan hô chiến sĩ nhí! 🎉',
-      stars,
+      stars, starsGot,
       msg: stars === 3
         ? 'Bé vượt bãi mìn mà không sai câu nào!'
         : 'Bé đã vượt qua chặng này an toàn!',

@@ -91,7 +91,10 @@ chơi sau khi đã đi hết hành trình.
 
 ## 🎒 Tủ đồ & 🏅 Album sticker
 
-Sao ⭐ kiếm được ở mỗi chặng dùng để **mua đồ cho nhân vật** trong Tủ đồ:
+Sao ⭐ kiếm được ở mỗi chặng dùng để **mua đồ cho nhân vật** trong Tủ đồ.
+Đi hết hành trình với 3 sao mọi chặng được **100 ⭐** (mỗi chặng lần đầu qua
+được thưởng thêm 2 ⭐), mua được khoảng **2/3 tủ đồ** — phần còn lại kiếm thêm ở
+Vùng Đất Bí Ẩn hoặc chơi lại chặng cũ:
 
 - **Mũ:** mũ bộ đội · mũ tai bèo · mũ sinh nhật · mũ phi hành gia · vương miện
 - **Quân phục:** xanh bộ đội · xanh hải quân · cam sa mạc · hồng kẹo ngọt · tím vũ trụ

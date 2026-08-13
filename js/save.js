@@ -27,6 +27,7 @@
   };
 
   const MAX_MISSED = 12;
+  const FIRST_CLEAR_BONUS = 2;   /* sao thưởng thêm cho lần đầu qua một chặng */
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
@@ -88,15 +89,23 @@
     /* ---------- hành trình ---------- */
     nodeStars(id) { return this.data.progress[id] || 0; },
 
+    /* Trả về SỐ SAO BÉ THỰC SỰ NHẬN để màn qua chặng hiện đúng con số */
     setNodeStars(id, stars) {
       const old = this.data.progress[id] || 0;
-      if (stars > old) {
+      let got;
+      if (old === 0) {
+        /* lần đầu qua chặng: thưởng thêm cho bõ công khám phá */
         this.data.progress[id] = stars;
-        this.addStars(stars - old);   /* chỉ thưởng phần sao tăng thêm */
+        got = stars + FIRST_CLEAR_BONUS;
+      } else if (stars > old) {
+        this.data.progress[id] = stars;
+        got = stars - old;            /* chơi lại tốt hơn: bù phần chênh */
       } else {
-        this.addStars(1);             /* chơi lại vẫn được 1 sao động viên */
+        got = 1;                      /* chơi lại vẫn được 1 sao động viên */
       }
+      this.addStars(got);
       this.commit();
+      return got;
     },
 
     /* Chặng đầu tiên luôn mở. Chặng sau mở khi chặng trước đã xong.
@@ -178,11 +187,16 @@
       this.commit();
     },
 
-    /* Lấy một câu cũ để ôn lại (chỉ lấy câu thuộc chủ đề đang chơi) */
-    takeMissed(topics) {
-      const list = this.data.missed
+    /* Lấy một câu cũ để ôn lại (chỉ lấy câu thuộc chủ đề đang chơi,
+       và tránh lặp lại đúng câu vừa ôn xong) */
+    takeMissed(topics, avoidPrompt) {
+      let list = this.data.missed
         .map((m, i) => ({ m, i }))
         .filter(x => !topics || topics.indexOf('mix') >= 0 || topics.indexOf(x.m.topic) >= 0);
+      if (list.length > 1 && avoidPrompt) {
+        const other = list.filter(x => x.m.prompt !== avoidPrompt);
+        if (other.length) list = other;
+      }
       if (!list.length) return null;
       const chosen = list[Math.floor(Math.random() * list.length)];
       return { q: chosen.m, index: chosen.i };

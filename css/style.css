@@ -1304,3 +1304,27 @@ html, body {
 
 /* thẻ chủ đề có thêm chữ "ôn lại" nên cho phép dài hơn */
 .q-badge { max-width: calc(100% - 70px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ============================================================
+   SỬA LỖI: thẻ câu hỏi phình ra khi có bong bóng gợi ý / cô giáo
+   làm tràn cả thanh túi đồ ra ngoài màn hình (máy nhỏ và nằm ngang).
+   Giới hạn chiều cao thẻ + cho phép cuộn trong bong bóng.
+   ============================================================ */
+.question-card {
+  max-height: 46dvh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.hint-bubble, .teach-bubble {
+  max-height: 22dvh;
+  overflow-y: auto;
+  flex: 0 0 auto;
+}
+/* sân chơi được phép co lại trên màn hình thấp thay vì đẩy mọi thứ đi */
+.stage { min-height: min(210px, 32dvh); }
+
+@media (max-height: 620px) {
+  .question-card { max-height: 40dvh; padding-bottom: 6px; }
+  .hint-bubble, .teach-bubble { max-height: 18dvh; padding: 5px 10px; }
+  .teach-visual .clock-svg { width: clamp(46px, 11vmin, 70px); }
+}
