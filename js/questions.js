@@ -275,7 +275,7 @@
     const made = build({ label: it.a }, it.w.map(x => ({ label: x })));
     return {
       topic: 'riddle', prompt: it.q, speak: plain(it.q), hint: it.h,
-      visual: { type: 'emoji', value: '❓' },
+      visual: { type: 'none' },
       answers: made.answers, correct: made.correct
     };
   }

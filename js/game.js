@@ -9,11 +9,23 @@
   const WALK_MS = 750;
 
   /* 4 vị trí đặt hoa mìn (% của sân chơi) */
-  const SPOTS = [
-    { x: 20, y: 26 }, { x: 74, y: 22 },
-    { x: 15, y: 60 }, { x: 72, y: 62 }
+  /* Sân dọc/vuông: 4 hoa xếp 2 hàng. */
+  const SPOTS_TALL = [
+    { x: 21, y: 25 }, { x: 74, y: 21 },
+    { x: 17, y: 57 }, { x: 73, y: 60 }
+  ];
+  /* Sân rất ngang (điện thoại xoay ngang): xếp thành vòng cung một hàng,
+     nếu không hoa hàng trên sẽ đè lên hàng dưới. */
+  const SPOTS_WIDE = [
+    { x: 12, y: 33 }, { x: 37, y: 20 },
+    { x: 63, y: 20 }, { x: 88, y: 33 }
   ];
   const HOME = { x: 46, y: 86 };
+
+  function currentSpots() {
+    const r = el.stage.getBoundingClientRect();
+    return (r.width / Math.max(1, r.height) >= 2) ? SPOTS_WIDE : SPOTS_TALL;
+  }
 
   const $ = id => document.getElementById(id);
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -25,6 +37,7 @@
     'btnSpeak', 'hintBubble', 'hintText', 'stage', 'layerFar', 'layerMid', 'groundDeco',
     'field', 'hero', 'heroInner', 'shieldAura', 'fx', 'terrainName', 'items',
     'itemHint', 'itemFifty', 'itemShield', 'cntHint', 'cntFifty', 'cntShield',
+    'splash', 'startLine', 'btnInstall', 'btnFull', 'iosTip',
     'menu', 'menuHero', 'topics', 'levels', 'btnStart', 'bestScore',
     'winScreen', 'winTitle', 'winStars', 'winScore', 'winMsg', 'winReward',
     'btnNext', 'btnHome', 'pauseScreen', 'btnResume', 'btnQuit', 'toastWrap'];
@@ -212,10 +225,13 @@
     G.mines = [];
 
     const order = [0, 1, 2, 3];
+    const spots = currentSpots();
+    lastLayout = spots === SPOTS_WIDE ? 'wide' : 'tall';
+    const jit = spots === SPOTS_WIDE ? 1.5 : 3;
     q.answers.forEach((ans, i) => {
-      const spot = SPOTS[order[i]];
-      const x = spot.x + rnd(-3, 3);
-      const y = spot.y + rnd(-2.5, 2.5);
+      const spot = spots[order[i]];
+      const x = spot.x + rnd(-jit, jit);
+      const y = spot.y + rnd(-jit * 0.8, jit * 0.8);
 
       const b = document.createElement('button');
       b.className = 'mine';
@@ -241,6 +257,22 @@
       b.addEventListener('click', () => choose(i, b, x, y));
       el.field.appendChild(b);
       G.mines.push({ el: b, x, y, dead: false, index: i });
+    });
+  }
+
+  /* Xoay màn hình giữa chừng: dời hoa sang bố cục mới, giữ nguyên hoa đã nổ */
+  let lastLayout = null;
+
+  function relayoutMines() {
+    const spots = currentSpots();
+    const mode = spots === SPOTS_WIDE ? 'wide' : 'tall';
+    if (mode === lastLayout || !G.mines.length) { lastLayout = mode; return; }
+    lastLayout = mode;
+    G.mines.forEach((m, i) => {
+      const s = spots[i];
+      m.x = s.x; m.y = s.y;
+      m.el.style.setProperty('--x', s.x + '%');
+      m.el.style.setProperty('--y', s.y + '%');
     });
   }
 
@@ -302,6 +334,7 @@
 
     particles(mine.x, mine.y, ['⭐', '✨', '💛', '🌟', '💫'], 12, 130);
     popText(pickPraise(), mine.x, mine.y);
+    if (global.PWA) PWA.buzz(35);
 
     const gained = G.firstTry ? 10 : 5;
     G.score += gained;
@@ -361,6 +394,7 @@
 
     /* nổ mìn */
     Sound.wrong();
+    if (global.PWA) PWA.buzz([0, 70, 50, 110]);
     boom(mine.x, mine.y);
     el.stage.classList.add('shake');
     setTimeout(() => el.stage.classList.remove('shake'), 520);
@@ -585,9 +619,17 @@
     Sound.resume();
     if (Sound.musicOn) Sound.startMusic();
 
+    document.body.dataset.playing = '1';
+    if (global.PWA) PWA.keepAwake(true);
+
     renderTrail();
     nextQuestion();
     Sound.speak('Chiến sĩ nhí ơi, cùng dò mìn nào!');
+
+    if (!store.get('tutorialShown', false)) {
+      store.set('tutorialShown', true);
+      setTimeout(() => toast('👉 Chạm vào bông hoa có đáp án đúng nhé!'), 1400);
+    }
   }
 
   function goHome() {
@@ -602,6 +644,8 @@
     el.hero.classList.remove('cheer', 'blast', 'dizzy');
     setShield(false);
     showBest();
+    document.body.dataset.playing = '0';
+    if (global.PWA) PWA.keepAwake(false);
   }
 
   function showBest() {
@@ -682,6 +726,7 @@
       G.busy = true;
       Sound.shutUp();
       Sound.stopMusic();
+      if (global.PWA) PWA.keepAwake(false);
       el.pauseScreen.hidden = false;
     });
 
@@ -691,7 +736,19 @@
       G.busy = false;
       Sound.resume();
       if (Sound.musicOn) Sound.startMusic();
+      if (global.PWA) PWA.keepAwake(true);
     });
+
+    el.btnInstall.addEventListener('click', async () => {
+      Sound.click();
+      const ok = await PWA.install();
+      if (ok) toast('🎉 Đã cài game vào máy của bé!');
+      el.btnInstall.hidden = true;
+    });
+
+    el.btnFull.addEventListener('click', () => { Sound.click(); PWA.toggleFullscreen(); });
+
+    global.addEventListener('beforeinstallprompt', () => { el.btnInstall.hidden = false; });
 
     el.btnQuit.addEventListener('click', goHome);
     el.btnHome.addEventListener('click', goHome);
@@ -714,6 +771,28 @@
     });
   }
 
+  /* ---------- các nút riêng của bản web app ---------- */
+  function setupAppButtons() {
+    const P = global.PWA;
+    if (!P) return;
+    if (P.installEvent) el.btnInstall.hidden = false;
+    if (P.fullscreenSupported && !P.standalone) el.btnFull.hidden = false;
+    if (P.isIOS && !P.standalone) el.iosTip.hidden = false;
+  }
+
+  /* ---------- ẩn màn hình chờ khi font + đồ họa đã sẵn sàng ---------- */
+  function hideSplash() {
+    const done = () => {
+      el.splash.classList.add('hide');
+      setTimeout(() => { el.splash.hidden = true; }, 500);
+    };
+    const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    let called = false;
+    const once = () => { if (!called) { called = true; done(); } };
+    fonts.then(() => setTimeout(once, 120));
+    setTimeout(once, 2500); /* mạng chậm cũng không bắt bé chờ quá lâu */
+  }
+
   /* ============================================================
      KHỞI ĐỘNG
      ============================================================ */
@@ -734,10 +813,21 @@
     applyTerrain(false);
     renderTrail();
     heroJump(HOME.x, HOME.y);
+    setupAppButtons();
+    hideSplash();
 
+    /* xoay ngang/dọc: xếp lại vị trí hoa và đưa nhân vật về đúng chỗ */
+    let resizeTimer = null;
     window.addEventListener('resize', () => {
-      /* giữ nhân vật đúng vị trí khi xoay màn hình */
-      if (G.screen !== 'play') heroJump(HOME.x, HOME.y);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (G.screen === 'play' && !G.busy) {
+          relayoutMines();
+          heroJump(HOME.x, HOME.y);
+        } else if (G.screen !== 'play') {
+          heroJump(HOME.x, HOME.y);
+        }
+      }, 220);
     });
   }
 

@@ -2,8 +2,6 @@
    CHIẾN SĨ DÒ MÌN — Giao diện cho bé 6 tuổi
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap');
-
 :root {
   --font: 'Baloo 2', 'Comic Sans MS', 'Segoe UI Rounded', 'Quicksand', system-ui, sans-serif;
 
@@ -14,8 +12,10 @@
   --purple: #c77dff;
   --ink: #3a2c46;
 
-  --mine: clamp(72px, 15.5vmin, 128px);
-  --hero: clamp(66px, 15vmin, 118px);
+  /* Kích thước bám theo CẢ chiều rộng lẫn chiều cao: điện thoại dọc thì hoa to
+     cho bé dễ chạm, màn hình nằm ngang thì tự thu lại cho vừa sân. */
+  --mine: clamp(74px, min(23vw, 21vh), 132px);
+  --hero: clamp(72px, min(21vw, 21vh), 120px);
 
   --shadow-soft: 0 6px 0 rgba(0, 0, 0, .12), 0 10px 24px rgba(0, 0, 0, .16);
   --radius: 22px;
@@ -33,19 +33,47 @@ html, body {
   background: #cdf3ff;
   user-select: none;
   -webkit-user-select: none;
+  /* chặn kéo-để-tải-lại và nảy trang trên điện thoại */
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  position: fixed;
+  inset: 0;
+  width: 100%;
 }
 
 #app {
   position: relative;
+  height: 100%;
   height: 100dvh;
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 6px 8px 8px;
+  /* chừa chỗ cho tai thỏ / thanh vuốt của điện thoại */
+  padding:
+    calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right))
+    calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
   overflow: hidden;
 }
+
+/* ============================================================
+   MÀN HÌNH CHỜ
+   ============================================================ */
+#splash {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px;
+  background: linear-gradient(180deg, #8fe3ff, #ffe8f2 65%, #ffd9e8);
+  transition: opacity .45s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+.splash-flower { font-size: clamp(3rem, 16vmin, 6rem); animation: splashSpin 1.6s ease-in-out infinite; }
+@keyframes splashSpin {
+  0%, 100% { transform: rotate(-12deg) scale(1); }
+  50% { transform: rotate(12deg) scale(1.14); }
+}
+.splash-text { font-weight: 800; font-size: clamp(.9rem, 3vmin, 1.15rem); color: #ff5d8f; }
 
 /* ============================================================
    THANH THÔNG TIN
@@ -239,7 +267,7 @@ html, body {
 
 .ground {
   position: absolute; left: -2%; right: -2%; bottom: -3%;
-  height: 34%;
+  height: 40%;
   background: linear-gradient(180deg, var(--g1), var(--g2));
   border-radius: 46% 54% 0 0 / 26% 26% 0 0;
   box-shadow: inset 0 6px 0 rgba(255, 255, 255, .32);
@@ -247,8 +275,9 @@ html, body {
 }
 .ground-deco { position: absolute; inset: 0; pointer-events: none; }
 
+/* Đặt ở góc dưới-trái để không che bông hoa nào, kể cả khi xoay ngang */
 .terrain-name {
-  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 8px; left: 10px;
   background: rgba(255, 255, 255, .92);
   padding: 4px 16px; border-radius: 999px;
   font-weight: 800; font-size: clamp(.78rem, 2.5vmin, 1rem);
@@ -257,11 +286,30 @@ html, body {
 }
 .terrain-name.show { animation: terrainPop 2.6s ease; }
 @keyframes terrainPop {
-  0% { opacity: 0; transform: translate(-50%, -22px) scale(.7); }
-  16% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
-  26% { transform: translate(-50%, 0) scale(1); }
+  0% { opacity: 0; transform: translateX(-26px) scale(.7); }
+  16% { opacity: 1; transform: translateX(0) scale(1.1); }
+  26% { transform: translateX(0) scale(1); }
   80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -14px); }
+  100% { opacity: 0; transform: translateX(-14px); }
+}
+
+/* vạch xuất phát - để bé hiểu "bị hất về chỗ cũ" nghĩa là về đâu */
+.start-line {
+  position: absolute; left: 50%; top: 88%;
+  transform: translate(-50%, -50%);
+  width: min(70%, 300px); height: clamp(26px, 6vmin, 40px);
+  border: 4px dashed rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 14px;
+  pointer-events: none;
+}
+.start-line span {
+  font-size: clamp(.55rem, 2vmin, .78rem); font-weight: 800;
+  color: #fff; letter-spacing: .12em;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, .3);
+  opacity: .9;
 }
 
 /* ============================================================
@@ -682,6 +730,21 @@ html, body {
 .ghost-btn:active { transform: translateY(4px); box-shadow: none; }
 
 .best-score { margin-top: 8px; font-weight: 800; opacity: .7; font-size: clamp(.75rem, 2.5vmin, .95rem); }
+
+.menu-tools { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.tool-btn {
+  border: 3px solid #fff; border-radius: 999px;
+  background: rgba(255, 255, 255, .95);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .13);
+  padding: 7px 15px; cursor: pointer;
+  font-family: var(--font); font-weight: 800;
+  font-size: clamp(.72rem, 2.4vmin, .92rem);
+}
+.tool-btn:active { transform: translateY(3px); box-shadow: none; }
+.ios-tip {
+  margin-top: 9px; font-size: clamp(.68rem, 2.2vmin, .85rem);
+  font-weight: 700; opacity: .72; line-height: 1.35;
+}
 
 /* --- qua chặng --- */
 .overlay-win { background: rgba(30, 20, 50, .55); backdrop-filter: blur(4px); }

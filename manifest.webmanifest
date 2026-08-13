@@ -1,0 +1,23 @@
+{
+  "name": "Chiến Sĩ Dò Mìn",
+  "short_name": "Dò Mìn",
+  "description": "Game trả lời câu hỏi vui nhộn cho bé 6 tuổi: bé vào vai chiến sĩ nhí băng qua bãi hoa mìn bằng cách chọn đúng đáp án.",
+  "lang": "vi",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "./?app=1",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#cdf3ff",
+  "theme_color": "#7ed957",
+  "categories": ["games", "education", "kids"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
